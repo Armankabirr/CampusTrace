@@ -1,11 +1,32 @@
 import { useState } from 'react'
 import HomePage from './pages/HomePage'
-import AuthPage from './pages/AuthPage'
+import Login from './pages/Login'
+import Sign from './pages/Sign'
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', or 'signup'
 
-  return isAuthenticated ? <HomePage /> : <AuthPage />
+  const handleLoginClick = () => {
+    setCurrentPage('login')
+  }
+
+  const handleSignupClick = () => {
+    setCurrentPage('signup')
+  }
+
+  const handleBackClick = () => {
+    setCurrentPage('home')
+  }
+
+  if (currentPage === 'login') {
+    return <Login onBack={handleBackClick} />
+  }
+
+  if (currentPage === 'signup') {
+    return <Sign onBack={handleBackClick} />
+  }
+
+  return <HomePage onLogin={handleLoginClick} onSignup={handleSignupClick} />
 }
 
 export default App
