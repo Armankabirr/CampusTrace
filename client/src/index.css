@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+	font-family: 'Sora', sans-serif;
+}
+
+html,
+body,
+#root {
+	margin: 0;
+	min-height: 100%;
+}
+
+body {
+	background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 60%, #eef2f7 100%);
+}
+
+.font-sora {
+	font-family: 'Sora', sans-serif;
+}
+
+.hero-fade {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: -2px;
+	height: 140px;
+	background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, #f1f5f9 100%);
+}
+
+.cta-glow {
+	position: absolute;
+	inset: 0;
+	background-image: radial-gradient(circle at 10% 80%, rgba(255, 214, 153, 0.45), transparent 30%),
+		radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.2), transparent 35%);
+}
