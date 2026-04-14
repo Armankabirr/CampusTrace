@@ -7,6 +7,7 @@ function Sign({ onBack }) {
     password: '',
     confirmPassword: '',
     fullName: '',
+    studentId: '',
   })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
@@ -30,6 +31,10 @@ function Sign({ onBack }) {
 
     if (!formData.fullName || formData.fullName.trim().length < 2) {
       newErrors.fullName = 'Please enter your full name'
+    }
+
+    if (!formData.studentId || formData.studentId.trim().length < 3) {
+      newErrors.studentId = 'Please enter your student ID'
     }
 
     if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -66,6 +71,7 @@ function Sign({ onBack }) {
           email: formData.email,
           password: formData.password,
           fullName: formData.fullName,
+          studentId: formData.studentId,
         }),
       })
 
@@ -230,6 +236,27 @@ function Sign({ onBack }) {
                     }`}
                   />
                   {errors.fullName && <p className='text-red-600 text-xs mt-1'>{errors.fullName}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor='studentId' className='block text-sm font-medium text-gray-700 mb-1'>
+                    Student ID
+                  </label>
+                  <input
+                    type='text'
+                    id='studentId'
+                    name='studentId'
+                    value={formData.studentId}
+                    onChange={handleInputChange}
+                    placeholder='011231000'
+                    required
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                      errors.studentId
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:ring-orange-500'
+                    }`}
+                  />
+                  {errors.studentId && <p className='text-red-600 text-xs mt-1'>{errors.studentId}</p>}
                 </div>
 
                 <div>
