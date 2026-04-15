@@ -4,11 +4,12 @@ import signupBg from '../assets/signUp-background.jpg'
 function Sign({ onBack }) {
   const [formData, setFormData] = useState({
     email: '',
+    phone: '',
     password: '',
-    confirmPassword: '',
     fullName: '',
     studentId: '',
   })
+  const [currentStep, setCurrentStep] = useState(1)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
 
@@ -26,37 +27,58 @@ function Sign({ onBack }) {
     }
   }
 
-  const validateForm = () => {
+  const validateStepOne = () => {
     const newErrors = {}
 
     if (!formData.fullName || formData.fullName.trim().length < 2) {
-      newErrors.fullName = 'Please enter your full name'
+      newErrors.fullName = 'Please enter your user name'
     }
 
     if (!formData.studentId || formData.studentId.trim().length < 3) {
       newErrors.studentId = 'Please enter your student ID'
     }
 
+    if (!formData.phone || !/^\+?\d{10,15}$/.test(formData.phone.trim())) {
+      newErrors.phone = 'Please enter a valid phone number'
+    }
+
     if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address'
-    }
-
-    if (!formData.password || formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match'
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
+  const validateStepTwo = () => {
+    const newErrors = {}
+
+    if (!formData.password || formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleNextStep = () => {
+    if (!validateStepOne()) {
+      return
+    }
+
+    setErrors({})
+    setCurrentStep(2)
+  }
+
+  const handlePreviousStep = () => {
+    setErrors({})
+    setCurrentStep(1)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!validateForm()) {
+    if (!validateStepTwo()) {
       return
     }
 
@@ -69,6 +91,7 @@ function Sign({ onBack }) {
         },
         body: JSON.stringify({
           email: formData.email,
+          phone: formData.phone,
           password: formData.password,
           fullName: formData.fullName,
           studentId: formData.studentId,
@@ -218,119 +241,139 @@ function Sign({ onBack }) {
               )}
 
               <form onSubmit={handleSubmit} className='space-y-4'>
-                <div>
-                  <label htmlFor='fullName' className='block text-sm font-medium text-gray-700 mb-1'>
-                    Full Name
-                  </label>
-                  <input
-                    type='text'
-                    id='fullName'
-                    name='fullName'
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    placeholder='John Doe'
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                      errors.fullName
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-orange-500'
-                    }`}
-                  />
-                  {errors.fullName && <p className='text-red-600 text-xs mt-1'>{errors.fullName}</p>}
-                </div>
+                <div className='text-xs text-gray-500'>Step {currentStep} of 2</div>
 
-                <div>
-                  <label htmlFor='studentId' className='block text-sm font-medium text-gray-700 mb-1'>
-                    Student ID
-                  </label>
-                  <input
-                    type='text'
-                    id='studentId'
-                    name='studentId'
-                    value={formData.studentId}
-                    onChange={handleInputChange}
-                    placeholder='011231000'
-                    required
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                      errors.studentId
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-orange-500'
-                    }`}
-                  />
-                  {errors.studentId && <p className='text-red-600 text-xs mt-1'>{errors.studentId}</p>}
-                </div>
+                {currentStep === 1 ? (
+                  <>
+                    <div>
+                      <label htmlFor='fullName' className='block text-sm font-medium text-gray-700 mb-1'>
+                        User Name
+                      </label>
+                      <input
+                        type='text'
+                        id='fullName'
+                        name='fullName'
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                        placeholder='John Doe'
+                        className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                          errors.fullName
+                            ? 'border-red-500 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-orange-500'
+                        }`}
+                      />
+                      {errors.fullName && <p className='text-red-600 text-xs mt-1'>{errors.fullName}</p>}
+                    </div>
 
-                <div>
-                  <label htmlFor='email' className='block text-sm font-medium text-gray-700 mb-1'>
-                    Email Address
-                  </label>
-                  <input
-                    type='email'
-                    id='email'
-                    name='email'
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder='your@college.edu'
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                      errors.email
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-orange-500'
-                    }`}
-                  />
-                  {errors.email && <p className='text-red-600 text-xs mt-1'>{errors.email}</p>}
-                </div>
+                    <div>
+                      <label htmlFor='studentId' className='block text-sm font-medium text-gray-700 mb-1'>
+                        Student ID
+                      </label>
+                      <input
+                        type='text'
+                        id='studentId'
+                        name='studentId'
+                        value={formData.studentId}
+                        onChange={handleInputChange}
+                        placeholder='011231000'
+                        className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                          errors.studentId
+                            ? 'border-red-500 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-orange-500'
+                        }`}
+                      />
+                      {errors.studentId && <p className='text-red-600 text-xs mt-1'>{errors.studentId}</p>}
+                    </div>
 
-                <div>
-                  <label htmlFor='password' className='block text-sm font-medium text-gray-700 mb-1'>
-                    Password
-                  </label>
-                  <input
-                    type='password'
-                    id='password'
-                    name='password'
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    placeholder='••••••••'
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                      errors.password
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-orange-500'
-                    }`}
-                  />
-                  {errors.password && <p className='text-red-600 text-xs mt-1'>{errors.password}</p>}
-                </div>
+                    <div>
+                      <label htmlFor='phone' className='block text-sm font-medium text-gray-700 mb-1'>
+                        Phone Number
+                      </label>
+                      <input
+                        type='tel'
+                        id='phone'
+                        name='phone'
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        placeholder='01XXXXXXXXX'
+                        className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                          errors.phone
+                            ? 'border-red-500 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-orange-500'
+                        }`}
+                      />
+                      {errors.phone && <p className='text-red-600 text-xs mt-1'>{errors.phone}</p>}
+                    </div>
 
-                <div>
-                  <label
-                    htmlFor='confirmPassword'
-                    className='block text-sm font-medium text-gray-700 mb-1'
-                  >
-                    Confirm Password
-                  </label>
-                  <input
-                    type='password'
-                    id='confirmPassword'
-                    name='confirmPassword'
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    placeholder='••••••••'
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                      errors.confirmPassword
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-orange-500'
-                    }`}
-                  />
-                  {errors.confirmPassword && (
-                    <p className='text-red-600 text-xs mt-1'>{errors.confirmPassword}</p>
-                  )}
-                </div>
+                    <div>
+                      <label htmlFor='email' className='block text-sm font-medium text-gray-700 mb-1'>
+                        Email Address
+                      </label>
+                      <input
+                        type='email'
+                        id='email'
+                        name='email'
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        placeholder='your@college.edu'
+                        className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                          errors.email
+                            ? 'border-red-500 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-orange-500'
+                        }`}
+                      />
+                      {errors.email && <p className='text-red-600 text-xs mt-1'>{errors.email}</p>}
+                    </div>
 
-                <button
-                  type='submit'
-                  disabled={loading}
-                  className='w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium py-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg'
-                >
-                  {loading ? 'Processing...' : 'Create Account'}
-                </button>
+                    <button
+                      type='button'
+                      onClick={handleNextStep}
+                      className='w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium py-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition transform hover:scale-105 shadow-lg'
+                    >
+                      Next
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label htmlFor='password' className='block text-sm font-medium text-gray-700 mb-1'>
+                        Password
+                      </label>
+                      <input
+                        type='password'
+                        id='password'
+                        name='password'
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        placeholder='••••••••'
+                        className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                          errors.password
+                            ? 'border-red-500 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-orange-500'
+                        }`}
+                      />
+                      {errors.password && <p className='text-red-600 text-xs mt-1'>{errors.password}</p>}
+                    </div>
+
+                    <div className='flex gap-3'>
+                      <button
+                        type='button'
+                        onClick={handlePreviousStep}
+                        className='w-1/3 border border-gray-300 text-gray-700 font-medium py-2.5 rounded-lg hover:bg-gray-50 transition'
+                      >
+                        Back
+                      </button>
+
+                      <button
+                        type='submit'
+                        disabled={loading}
+                        className='w-2/3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium py-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg'
+                      >
+                        {loading ? 'Processing...' : 'Create Account'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </form>
 
               <div className='text-center mt-5'>
