@@ -41,8 +41,8 @@ function Sign({ onBack }) {
       newErrors.studentId = 'Please enter your student ID'
     }
 
-    if (!formData.phone || !/^\+?\d{10,15}$/.test(formData.phone.trim())) {
-      newErrors.phone = 'Please enter a valid phone number'
+    if (!formData.phone || !/^(?:\+8801|01)[3-9]\d{8}$/.test(formData.phone.trim())) {
+      newErrors.phone = 'Please enter a valid Bangladeshi phone number'
     }
 
     if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -302,7 +302,7 @@ function Sign({ onBack }) {
                         name='phone'
                         value={formData.phone}
                         onChange={handleInputChange}
-                        placeholder='01XXXXXXXXX'
+                        placeholder='01XXXXXXXXX or +8801XXXXXXXXX'
                         className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
                           errors.phone
                             ? 'border-red-500 focus:ring-red-500'

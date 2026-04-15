@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const ALLOWED_DOMAIN_REGEX = /^[a-zA-Z0-9._%+-]+@bscse\.uiu\.ac\.bd$/i;
+const PHONE_REGEX = /^(?:\+8801|01)[3-9]\d{8}$/;
 
 const userSchema = new mongoose.Schema(
 	{
@@ -10,6 +11,7 @@ const userSchema = new mongoose.Schema(
 			trim: true,
 			minlength: 2,
 			maxlength: 100,
+			alias: 'fullName',
 		},
 		studentId: {
 			type: String,
@@ -29,6 +31,12 @@ const userSchema = new mongoose.Schema(
 				ALLOWED_DOMAIN_REGEX,
 				'Only UIU CSE university email (@bscse.uiu.ac.bd) is allowed.',
 			],
+		},
+		phone: {
+			type: String,
+			required: true,
+			trim: true,
+			match: [PHONE_REGEX, 'Please provide a valid Bangladeshi phone number.'],
 		},
 		password: {
 			type: String,
