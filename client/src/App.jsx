@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Stairs from './components/Stairs'
 import HomePage from './pages/HomePage'
 import Login from './pages/Login'
 import Sign from './pages/Sign'
@@ -18,15 +19,16 @@ function App() {
     setCurrentPage('home')
   }
 
-  if (currentPage === 'login') {
-    return <Login onBack={handleBackClick} />
-  }
+  const page =
+    currentPage === 'login' ? (
+      <Login onBack={handleBackClick} />
+    ) : currentPage === 'signup' ? (
+      <Sign onBack={handleBackClick} />
+    ) : (
+      <HomePage onLogin={handleLoginClick} onSignup={handleSignupClick} />
+    )
 
-  if (currentPage === 'signup') {
-    return <Sign onBack={handleBackClick} />
-  }
-
-  return <HomePage onLogin={handleLoginClick} onSignup={handleSignupClick} />
+  return <Stairs>{page}</Stairs>
 }
 
 export default App
