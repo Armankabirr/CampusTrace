@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 
@@ -7,6 +7,24 @@ function Stairs({ children }) {
   const pageRef = useRef(null)
   const stairRefs = useRef([])
   const [showOverlay, setShowOverlay] = useState(true)
+  const [showScrollTop, setShowScrollTop] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300)
+    }
+
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
+
+  const handleScrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   useGSAP(() => {
     const stairs = stairRefs.current.filter(Boolean)
@@ -83,6 +101,19 @@ function Stairs({ children }) {
   return (
     <div className='relative min-h-screen overflow-hidden'>
       <div ref={pageRef}>{children}</div>
+
+      <button
+        type='button'
+        onClick={handleScrollToTop}
+        aria-label='Scroll to top'
+        className={`fixed bottom-6 right-6 z-40 grid h-12 w-12 place-items-center rounded-full border border-orange-200 bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg transition duration-300 hover:-translate-y-1 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl ${
+          showScrollTop ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'
+        }`}
+      >
+        <svg className='h-5 w-5' fill='none' stroke='currentColor' viewBox='0 0 24 24' aria-hidden='true'>
+          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M5 15l7-7 7 7' />
+        </svg>
+      </button>
 
       {showOverlay && (
         <div ref={stairParentRef} className='pointer-events-none fixed inset-0 z-50 hidden h-screen w-full bg-white'>
