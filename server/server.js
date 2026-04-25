@@ -1,11 +1,12 @@
 import app from './src/app.js';
 import connectDb from './src/config/database.js';
+import config from './src/config/config.js';
 
 try {
 	await connectDb();
 
-	app.listen(3000, () => {
-		console.log('Server is running on port 3000');
+	app.listen(config.port, () => {
+		console.log(`Server is running on port ${config.port}`);
 	});
 } catch (error) {
 	console.error('Unable to start server:', error.message);
