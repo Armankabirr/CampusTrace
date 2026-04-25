@@ -41,8 +41,9 @@ const reasons = [
   'Real-time Notifications',
 ]
 
-function HomePage({ onLogin, onSignup }) {
+function HomePage({ onLogin, onSignup, authUser }) {
   const [parallaxY, setParallaxY] = useState(0)
+  const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : 'U'
 
   useEffect(() => {
     let ticking = false
@@ -96,12 +97,24 @@ function HomePage({ onLogin, onSignup }) {
           </div>
 
           <div className="flex items-center gap-2 text-xs">
-            <button onClick={onLogin} className="hidden rounded-full px-4 py-2 font-semibold text-slate-700 md:block hover:text-slate-900 transition" type="button">
-              Sign In
-            </button>
-            <button onClick={onSignup} className="rounded-full bg-brand-500 px-4 py-2 font-semibold text-white transition hover:bg-brand-600" type="button">
-              Get Started
-            </button>
+            {authUser ? (
+              <button
+                type="button"
+                title={authUser.name || 'User'}
+                className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-bold text-white shadow"
+              >
+                {userInitial}
+              </button>
+            ) : (
+              <>
+                <button onClick={onLogin} className="hidden rounded-full px-4 py-2 font-semibold text-slate-700 md:block hover:text-slate-900 transition" type="button">
+                  Sign In
+                </button>
+                <button onClick={onSignup} className="rounded-full bg-brand-500 px-4 py-2 font-semibold text-white transition hover:bg-brand-600" type="button">
+                  Get Started
+                </button>
+              </>
+            )}
           </div>
         </nav>
       </header>

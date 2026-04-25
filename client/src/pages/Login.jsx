@@ -1,13 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import loginBg from '../assets/Login_background.jpg'
 
-function Login({ onBack }) {
+function Login({ onBack, onSwitchToSignup, initialEmail = '', onLoginSuccess }) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (initialEmail) {
+      setFormData((prev) => ({ ...prev, email: initialEmail }))
+    }
+  }, [initialEmail])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -49,6 +55,7 @@ function Login({ onBack }) {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -60,9 +67,11 @@ function Login({ onBack }) {
 
       if (response.ok) {
         const data = await response.json()
-        console.log('Login successful', data)
-        // You can redirect to dashboard or home page here
-        // navigate('/dashboard')
+        localStorage.setItem('accessToken', data.accessToken)
+        setErrors({})
+        if (onLoginSuccess) {
+          onLoginSuccess(data.user)
+        }
       } else {
         const error = await response.json()
         setErrors({ form: error.message || 'An error occurred' })
@@ -245,9 +254,13 @@ function Login({ onBack }) {
               <div className='text-center mt-5'>
                 <p className='text-gray-700 text-sm'>
                   Don't have an account?{' '}
-                  <a href='/signup' className='text-orange-600 hover:text-orange-700 font-bold transition'>
+                  <button
+                    type='button'
+                    onClick={onSwitchToSignup}
+                    className='text-orange-600 hover:text-orange-700 font-bold transition'
+                  >
                     Sign Up
-                  </a>
+                  </button>
                 </p>
               </div>
             </div>

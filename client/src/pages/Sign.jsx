@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import signupBg from '../assets/signUp-background.jpg'
 
-function Sign({ onBack }) {
+function Sign({ onBack, onSwitchToLogin }) {
   const [formData, setFormData] = useState({
     email: '',
     phone: '',
@@ -13,8 +13,10 @@ function Sign({ onBack }) {
   const [currentStep, setCurrentStep] = useState(1)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [otp, setOtp] = useState('')
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -90,9 +92,13 @@ function Sign({ onBack }) {
     }
 
     setLoading(true)
+    setErrors({})
+    setSuccessMessage('')
+
     try {
-      const response = await fetch('/api/auth/signup', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -100,22 +106,61 @@ function Sign({ onBack }) {
           email: formData.email,
           phone: formData.phone,
           password: formData.password,
-          fullName: formData.fullName,
+          name: formData.fullName,
           studentId: formData.studentId,
         }),
       })
 
       if (response.ok) {
-        const data = await response.json()
-        console.log('Signup successful', data)
-        // You can redirect to dashboard or home page here
-        // navigate('/dashboard')
+        setCurrentStep(3)
+        setSuccessMessage('OTP sent to your email. Enter it below to finish account creation.')
       } else {
         const error = await response.json()
         setErrors({ form: error.message || 'An error occurred' })
       }
     } catch (error) {
       console.error('Signup error:', error)
+      setErrors({ form: 'Network error. Please try again.' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault()
+
+    if (!otp || otp.trim().length !== 6) {
+      setErrors({ otp: 'Please enter your 6 digit OTP' })
+      return
+    }
+
+    setLoading(true)
+    setErrors({})
+    setSuccessMessage('')
+
+    try {
+      const response = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          otp: otp.trim(),
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        setErrors({ form: error.message || 'OTP verification failed' })
+        return
+      }
+
+      setSuccessMessage('Email verified and account created. Redirecting to login...')
+      onSwitchToLogin(formData.email)
+    } catch (error) {
+      console.error('OTP verification error:', error)
       setErrors({ form: 'Network error. Please try again.' })
     } finally {
       setLoading(false)
@@ -247,8 +292,14 @@ function Sign({ onBack }) {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className='space-y-4'>
-                <div className='text-xs text-gray-500'>Step {currentStep} of 2</div>
+              {successMessage && (
+                <div className='mb-5 p-3 bg-emerald-50 border border-emerald-200 rounded-lg'>
+                  <p className='text-emerald-700 text-sm'>{successMessage}</p>
+                </div>
+              )}
+
+              <form onSubmit={currentStep === 3 ? handleVerifyOtp : handleSubmit} className='space-y-4'>
+                <div className='text-xs text-gray-500'>Step {currentStep} of 3</div>
 
                 {currentStep === 1 ? (
                   <>
@@ -340,7 +391,7 @@ function Sign({ onBack }) {
                       Next
                     </button>
                   </>
-                ) : (
+                ) : currentStep === 2 ? (
                   <>
                     <div>
                       <label htmlFor='password' className='block text-sm font-medium text-gray-700 mb-1'>
@@ -473,15 +524,65 @@ function Sign({ onBack }) {
                       </button>
                     </div>
                   </>
+                ) : (
+                  <>
+                    <div>
+                      <label htmlFor='otp' className='block text-sm font-medium text-gray-700 mb-1'>
+                        Enter OTP
+                      </label>
+                      <input
+                        type='text'
+                        id='otp'
+                        name='otp'
+                        maxLength={6}
+                        value={otp}
+                        onChange={(e) => {
+                          setOtp(e.target.value.replace(/\D/g, ''))
+                          if (errors.otp) {
+                            setErrors((prev) => ({ ...prev, otp: '' }))
+                          }
+                        }}
+                        placeholder='123456'
+                        className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                          errors.otp
+                            ? 'border-red-500 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-orange-500'
+                        }`}
+                      />
+                      {errors.otp && <p className='text-red-600 text-xs mt-1'>{errors.otp}</p>}
+                    </div>
+
+                    <div className='flex gap-3'>
+                      <button
+                        type='button'
+                        onClick={() => setCurrentStep(2)}
+                        className='w-1/3 border border-gray-300 text-gray-700 font-medium py-2.5 rounded-lg hover:bg-gray-50 transition'
+                      >
+                        Back
+                      </button>
+
+                      <button
+                        type='submit'
+                        disabled={loading}
+                        className='w-2/3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium py-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg'
+                      >
+                        {loading ? 'Verifying...' : 'Verify OTP'}
+                      </button>
+                    </div>
+                  </>
                 )}
               </form>
 
               <div className='text-center mt-5'>
                 <p className='text-gray-700 text-sm'>
                   Already have an account?{' '}
-                  <a href='/login' className='text-orange-600 hover:text-orange-700 font-bold transition'>
+                  <button
+                    type='button'
+                    onClick={() => onSwitchToLogin(formData.email)}
+                    className='text-orange-600 hover:text-orange-700 font-bold transition'
+                  >
                     Sign In
-                  </a>
+                  </button>
                 </p>
               </div>
             </div>
