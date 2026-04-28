@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import Stairs from './components/Stairs'
 import HomePage from './pages/HomePage'
 import Login from './pages/Login'
+import ProfilePage from './pages/ProfilePage'
 import Sign from './pages/Sign'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', or 'signup'
+  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', or 'profile'
   const [prefilledLoginEmail, setPrefilledLoginEmail] = useState('')
   const [authUser, setAuthUser] = useState(null)
 
@@ -62,6 +63,22 @@ function App() {
     setCurrentPage('home')
   }
 
+  const handleAvatarClick = () => {
+    if (authUser) {
+      setCurrentPage('profile')
+    }
+  }
+
+  const handleHomeClick = () => {
+    setCurrentPage('home')
+  }
+
+  const handleSignOut = () => {
+    localStorage.removeItem('accessToken')
+    setAuthUser(null)
+    setCurrentPage('home')
+  }
+
   const page =
     currentPage === 'login' ? (
       <Login
@@ -72,8 +89,16 @@ function App() {
       />
     ) : currentPage === 'signup' ? (
       <Sign onBack={handleBackClick} onSwitchToLogin={handleSignupComplete} />
+    ) : currentPage === 'profile' ? (
+      <ProfilePage authUser={authUser} onHome={handleHomeClick} onSignOut={handleSignOut} onAvatarClick={handleAvatarClick} />
     ) : (
-      <HomePage onLogin={handleLoginClick} onSignup={handleSignupClick} authUser={authUser} />
+      <HomePage
+        onLogin={handleLoginClick}
+        onSignup={handleSignupClick}
+        onAvatarClick={handleAvatarClick}
+        onHome={handleHomeClick}
+        authUser={authUser}
+      />
     )
 
   return <Stairs>{page}</Stairs>

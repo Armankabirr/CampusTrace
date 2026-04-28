@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import heroImage from '../assets/hero.jpg'
+import Navbar from '../components/layout/Navbar'
 
 const stats = [
   { value: '150+', label: 'Items Reported' },
@@ -41,9 +42,8 @@ const reasons = [
   'Real-time Notifications',
 ]
 
-function HomePage({ onLogin, onSignup, authUser }) {
+function HomePage({ onLogin, onSignup, onAvatarClick, authUser, onHome }) {
   const [parallaxY, setParallaxY] = useState(0)
-  const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : 'U'
 
   useEffect(() => {
     let ticking = false
@@ -72,52 +72,17 @@ function HomePage({ onLogin, onSignup, authUser }) {
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 font-sora">
-      <header className="fixed inset-x-0 top-0 z-40 px-4 pt-4">
-        <nav className="mx-auto flex w-full max-w-6xl items-center justify-between rounded-full border border-white/70 bg-white/90 px-4 py-2.5 shadow-soft backdrop-blur">
-          <div className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-bold text-white">
-              Q
-            </span>
-            <div>
-              <p className="text-sm font-bold leading-none">CampusTrace</p>
-              <p className="text-[11px] text-slate-500">UIU Lost and Found</p>
-            </div>
-          </div>
-
-          <div className="hidden items-center gap-2 rounded-full bg-slate-100 p-1 text-xs text-slate-500 lg:flex">
-            <button className="rounded-full bg-white px-4 py-1.5 font-medium text-brand-600 shadow" type="button">
-              Home
-            </button>
-            <button className="rounded-full px-4 py-1.5 font-medium transition hover:bg-white" type="button">
-              Browse
-            </button>
-            <button className="rounded-full px-4 py-1.5 font-medium transition hover:bg-white" type="button">
-              Matches
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs">
-            {authUser ? (
-              <button
-                type="button"
-                title={authUser.name || 'User'}
-                className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-bold text-white shadow"
-              >
-                {userInitial}
-              </button>
-            ) : (
-              <>
-                <button onClick={onLogin} className="hidden rounded-full px-4 py-2 font-semibold text-slate-700 md:block hover:text-slate-900 transition" type="button">
-                  Sign In
-                </button>
-                <button onClick={onSignup} className="rounded-full bg-brand-500 px-4 py-2 font-semibold text-white transition hover:bg-brand-600" type="button">
-                  Get Started
-                </button>
-              </>
-            )}
-          </div>
-        </nav>
-      </header>
+      <Navbar
+        authUser={authUser}
+        activePage="home"
+        onHome={onHome}
+        onBrowse={onHome}
+        onMatches={onHome}
+        onLogin={onLogin}
+        onSignup={onSignup}
+        onAvatarClick={onAvatarClick}
+        onReportItem={onSignup}
+      />
 
       <main>
         <section className="relative min-h-[760px] overflow-hidden pt-28 text-white">
