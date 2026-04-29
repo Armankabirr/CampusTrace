@@ -207,6 +207,55 @@ export const getMe = async (req, res) => {
   return res.status(200).json({ user: req.user });
 };
 
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, phone, location } = req.body;
+    const userId = req.user._id;
+
+    if (!name && !phone && !location) {
+      return res.status(400).json({ message: 'At least one field is required for update.' });
+    }
+
+    const updateData = {};
+    
+    if (name) {
+      const trimmedName = String(name).trim();
+      if (trimmedName.length < 2 || trimmedName.length > 100) {
+        return res.status(400).json({ message: 'Name must be between 2 and 100 characters.' });
+      }
+      updateData.name = trimmedName;
+    }
+    
+    if (phone) {
+      const trimmedPhone = String(phone).trim();
+      const PHONE_REGEX = /^(?:\+8801|01)[3-9]\d{8}$/;
+      if (!PHONE_REGEX.test(trimmedPhone)) {
+        return res.status(400).json({ message: 'Please provide a valid Bangladeshi phone number.' });
+      }
+      updateData.phone = trimmedPhone;
+    }
+    
+    if (location) {
+      updateData.location = String(location).trim();
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+    }).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    return res.status(200).json({
+      message: 'Profile updated successfully.',
+      user: updatedUser,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Failed to update profile.' });
+  }
+};
+
 export const refreshToken = async (req, res) => {
   try {
     const token = req.cookies?.refreshToken;

@@ -38,6 +38,11 @@ const userSchema = new mongoose.Schema(
 			trim: true,
 			match: [PHONE_REGEX, 'Please provide a valid Bangladeshi phone number.'],
 		},
+		location: {
+			type: String,
+			trim: true,
+			default: 'Dhaka, Bangladesh',
+		},
 		password: {
 			type: String,
 			required: true,

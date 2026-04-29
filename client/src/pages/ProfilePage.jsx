@@ -55,6 +55,15 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
   const [userData, setUserData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    phone: '',
+    location: '',
+  })
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState(null)
+  const [editSuccess, setEditSuccess] = useState(false)
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -94,6 +103,77 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
     fetchUserData()
   }, [])
 
+  const handleOpenEdit = () => {
+    const currentUser = displayUser
+    setEditFormData({
+      name: currentUser?.name || '',
+      phone: currentUser?.phone || '',
+      location: currentUser?.location || 'Dhaka, Bangladesh',
+    })
+    setIsEditMode(true)
+    setEditError(null)
+    setEditSuccess(false)
+  }
+
+  const handleCloseEdit = () => {
+    setIsEditMode(false)
+    setEditFormData({ name: '', phone: '', location: '' })
+    setEditError(null)
+    setEditSuccess(false)
+  }
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target
+    setEditFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault()
+    setEditLoading(true)
+    setEditError(null)
+    setEditSuccess(false)
+
+    try {
+      const token = localStorage.getItem('accessToken')
+
+      if (!token) {
+        setEditError('No access token found')
+        setEditLoading(false)
+        return
+      }
+
+      const response = await fetch('/api/auth/update-profile', {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: editFormData.name.trim(),
+          phone: editFormData.phone.trim(),
+          location: editFormData.location.trim(),
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || 'Failed to update profile')
+      }
+
+      const data = await response.json()
+      setUserData(data.user || null)
+      setEditSuccess(true)
+      setTimeout(() => {
+        handleCloseEdit()
+      }, 1500)
+    } catch (err) {
+      console.error('Error updating profile:', err)
+      setEditError(err.message)
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
   const displayUser = userData || authUser
   const userName = displayUser?.name || 'Profile'
   const studentId = displayUser?.studentId || 'Loading...'
@@ -113,7 +193,7 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
   const personalContactFields = [
     { label: 'Email Address', value: displayUser?.email || 'Loading...', icon: '@' },
     { label: 'Phone Number', value: displayUser?.phone || 'Loading...', icon: 'P' },
-    { label: 'Location', value: 'Dhaka, Bangladesh', icon: 'L' },
+    { label: 'Location', value: displayUser?.location || 'Dhaka, Bangladesh', icon: 'L' },
   ]
 
   if (error) {
@@ -217,6 +297,7 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
 
                   <button
                     type="button"
+                    onClick={handleOpenEdit}
                     className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-brand-200 hover:text-brand-600"
                   >
                     Edit Profile
@@ -269,7 +350,7 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
             <article className="rounded-3xl border border-slate-200 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
                 <h2 className="text-lg font-bold text-slate-900">Personal Information</h2>
-                <button type="button" className="text-xs font-semibold text-brand-500 hover:text-brand-600">
+                <button type="button" onClick={handleOpenEdit} className="text-xs font-semibold text-brand-500 hover:text-brand-600">
                   Edit
                 </button>
               </div>
@@ -292,7 +373,7 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
             <article className="rounded-3xl border border-slate-200 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
                 <h2 className="text-lg font-bold text-slate-900">Contact Details</h2>
-                <button type="button" className="text-xs font-semibold text-brand-500 hover:text-brand-600">
+                <button type="button" onClick={handleOpenEdit} className="text-xs font-semibold text-brand-500 hover:text-brand-600">
                   Edit
                 </button>
               </div>
@@ -327,6 +408,93 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
             </div>
           </div>
         </section>
+
+        {isEditMode && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="mx-4 w-full max-w-md rounded-3xl bg-white p-6 shadow-lg">
+              <h2 className="mb-4 text-2xl font-bold text-slate-900">Edit Profile</h2>
+
+              {editError && (
+                <div className="mb-4 rounded-lg border border-red-300 bg-red-50 p-3">
+                  <p className="text-sm text-red-700">{editError}</p>
+                </div>
+              )}
+
+              {editSuccess && (
+                <div className="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 p-3">
+                  <p className="text-sm text-emerald-700">Profile updated successfully!</p>
+                </div>
+              )}
+
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-slate-700">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={editFormData.name}
+                    onChange={handleEditInputChange}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-slate-700">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={editFormData.phone}
+                    onChange={handleEditInputChange}
+                    placeholder="01XXXXXXXXX or +8801XXXXXXXXX"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="location" className="block text-sm font-medium text-slate-700">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    value={editFormData.location}
+                    onChange={handleEditInputChange}
+                    placeholder="e.g., Dhaka, Bangladesh"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={handleCloseEdit}
+                    disabled={editLoading}
+                    className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editLoading}
+                    className="flex-1 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:opacity-50"
+                  >
+                    {editLoading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         <Footer />
       </main>
