@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 
@@ -10,17 +11,9 @@ const profileMetrics = [
 
 const activityTabs = ['Recent Activity', 'My Claims', 'Account Settings']
 
-const personalFields = [
-  { label: 'Full Name', value: 'Sarah Johnson', icon: 'S' },
-  { label: 'Student ID', value: 'UIU-2021-0347', icon: '#' },
-  { label: 'Department', value: 'Computer Science & Engineering', icon: 'D' },
-  { label: 'Batch & Semester', value: '42nd Batch - 8th Semester', icon: 'B' },
-  { label: 'Joined', value: 'September 2021', icon: 'J' },
-]
-
 const contactFields = [
-  { label: 'Email Address', value: 'sarah.j@uiu.ac.bd', icon: '@' },
-  { label: 'Phone Number', value: '+880 1712-345678', icon: 'P' },
+  { label: 'Email Address', icon: '@' },
+  { label: 'Phone Number', icon: 'P' },
   { label: 'Location', value: 'Dhaka, Bangladesh', icon: 'L' },
 ]
 
@@ -38,12 +31,93 @@ function formatJoinedDate(dateValue) {
 }
 
 function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
-  const userName = authUser?.name || 'Sarah Johnson'
-  const studentId = authUser?.studentId || 'UIU-2021-0347'
-  const email = authUser?.email || 'sarah.j@uiu.ac.bd'
-  const phone = authUser?.phone || '+880 1712-345678'
-  const joinedLabel = formatJoinedDate(authUser?.createdAt)
+  const [userData, setUserData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoading(true)
+        const token = localStorage.getItem('accessToken')
+
+        if (!token) {
+          setError('No access token found')
+          setLoading(false)
+          return
+        }
+
+        const response = await fetch('/api/auth/get-me', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch user data')
+        }
+
+        const data = await response.json()
+        setUserData(data.user || null)
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching user data:', err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserData()
+  }, [])
+
+  const displayUser = userData || authUser
+  const userName = displayUser?.name || 'Profile'
+  const studentId = displayUser?.studentId || 'Loading...'
+  const email = displayUser?.email || 'Loading...'
+  const phone = displayUser?.phone || 'Loading...'
+  const joinedLabel = formatJoinedDate(displayUser?.createdAt)
   const initial = userName.charAt(0).toUpperCase()
+
+  const personalFields = [
+    { label: 'Full Name', value: displayUser?.name || 'Loading...', icon: 'S' },
+    { label: 'Student ID', value: displayUser?.studentId || 'Loading...', icon: '#' },
+    { label: 'Department', value: 'Computer Science & Engineering', icon: 'D' },
+    { label: 'Batch & Semester', value: '42nd Batch - 8th Semester', icon: 'B' },
+    { label: 'Joined', value: joinedLabel, icon: 'J' },
+  ]
+
+  const personalContactFields = [
+    { label: 'Email Address', value: displayUser?.email || 'Loading...', icon: '@' },
+    { label: 'Phone Number', value: displayUser?.phone || 'Loading...', icon: 'P' },
+    { label: 'Location', value: 'Dhaka, Bangladesh', icon: 'L' },
+  ]
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-100 text-slate-900 font-sora">
+        <Navbar
+          authUser={authUser}
+          activePage="profile"
+          onHome={onHome}
+          onBrowse={onHome}
+          onMatches={onHome}
+          onAvatarClick={onAvatarClick}
+          onReportItem={onHome}
+        />
+        <main className="pt-24">
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <p className="text-red-600 font-semibold">Error loading profile: {error}</p>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 font-sora">
@@ -112,7 +186,6 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
                 <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-500">
                   <span>{email}</span>
                   <span>{phone}</span>
-                  <span>Dhaka, Bangladesh</span>
                 </div>
 
                 <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -204,7 +277,7 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
               </div>
 
               <div className="space-y-4 px-5 py-6">
-                {contactFields.map((field) => (
+                {personalContactFields.map((field) => (
                   <div key={field.label} className="flex items-start gap-3">
                     <div className="grid h-8 w-8 place-items-center rounded-lg bg-orange-50 text-xs font-bold text-brand-500">
                       {field.icon}
