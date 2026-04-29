@@ -17,6 +17,27 @@ const contactFields = [
   { label: 'Location', value: 'Dhaka, Bangladesh', icon: 'L' },
 ]
 
+// Department codes mapping
+const departmentCodes = {
+  '011': 'Computer Science & Engineering',
+  '012': 'Electrical & Electronics Engineering',
+  '013': 'Business Administration',
+  // Add more department codes as needed
+}
+
+function getDepartmentFromStudentId(studentId) {
+  if (!studentId || studentId.length < 3) return 'Loading...'
+  const deptCode = studentId.substring(0, 3)
+  return departmentCodes[deptCode] || 'Unknown Department'
+}
+
+function getBatchFromStudentId(studentId) {
+  if (!studentId || studentId.length < 6) return 'Loading...'
+  const batchCode = studentId.substring(3, 6)
+  const batchNum = parseInt(batchCode, 10)
+  return `${batchNum} Batch`
+}
+
 function formatJoinedDate(dateValue) {
   if (!dateValue) {
     return 'September 2021'
@@ -84,8 +105,8 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
   const personalFields = [
     { label: 'Full Name', value: displayUser?.name || 'Loading...', icon: 'S' },
     { label: 'Student ID', value: displayUser?.studentId || 'Loading...', icon: '#' },
-    { label: 'Department', value: 'Computer Science & Engineering', icon: 'D' },
-    { label: 'Batch & Semester', value: '42nd Batch - 8th Semester', icon: 'B' },
+    { label: 'Department', value: getDepartmentFromStudentId(displayUser?.studentId), icon: 'D' },
+    { label: 'Batch', value: getBatchFromStudentId(displayUser?.studentId), icon: 'B' },
     { label: 'Joined', value: joinedLabel, icon: 'J' },
   ]
 
@@ -178,8 +199,8 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-500">
-                  <span>Computer Science & Engineering</span>
-                  <span>42nd Batch - 8th Semester</span>
+                  <span>{getDepartmentFromStudentId(studentId)}</span>
+                  <span>{getBatchFromStudentId(studentId)}</span>
                   <span>Joined {joinedLabel}</span>
                 </div>
 
