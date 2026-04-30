@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 
@@ -29,6 +29,7 @@ function formatDate(value) {
 }
 
 function ReportItemPage({ authUser, onHome, onBack }) {
+  const fileInputRef = useRef(null)
   const [formData, setFormData] = useState({
     ...initialFormState,
     contactName: authUser?.name || '',
@@ -97,7 +98,7 @@ function ReportItemPage({ authUser, onHome, onBack }) {
       />
 
       <main className="pt-24">
-        <section className="relative w-full bg-[#FFF7F2] px-4 pb-14 pt-8 text-slate-900">
+        <section className="relative w-full -mt-24 bg-[#FFF7F2] px-4 pb-14 pt-8 text-slate-900">
           <div className="pointer-events-none absolute -right-12 top-0 hidden h-56 w-56 rounded-full bg-[#E8612C] opacity-[0.04] md:block" />
           <div className="pointer-events-none absolute left-0 top-10 hidden h-36 w-36 rounded-full bg-[#E8612C] opacity-[0.03] md:block" />
 
@@ -252,12 +253,23 @@ function ReportItemPage({ authUser, onHome, onBack }) {
                       Photo
                     </label>
                     <input
+                      ref={fileInputRef}
                       id="itemImage"
                       type="file"
                       accept="image/*"
                       onChange={handleImageChange}
-                      className="mt-1 w-full rounded-xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-800"
+                      className="sr-only"
                     />
+                    <div className="mt-1 flex items-center gap-3 rounded-xl border border-dashed border-slate-300 px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        Choose file
+                      </button>
+                      <span className="text-sm text-slate-600">{imageName || 'No file chosen'}</span>
+                    </div>
                     <p className="mt-2 text-xs text-slate-400">Optional, but photos improve match quality.</p>
                     {imageName ? <p className="mt-1 text-xs font-medium text-slate-600">Selected: {imageName}</p> : null}
                   </div>
