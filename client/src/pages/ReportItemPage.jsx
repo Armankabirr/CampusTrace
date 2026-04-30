@@ -21,6 +21,12 @@ const initialFormState = {
   contactPhone: '',
 }
 
+const initialSecretState = {
+  privateIdentifier: '',
+  proofQuestion: '',
+  proofAnswer: '',
+}
+
 function formatDate(value) {
   if (!value) return 'Today'
   const parsed = new Date(value)
@@ -30,12 +36,14 @@ function formatDate(value) {
 
 function ReportItemPage({ authUser, onHome, onBack }) {
   const fileInputRef = useRef(null)
+  const [formStep, setFormStep] = useState(1)
   const [formData, setFormData] = useState({
     ...initialFormState,
     contactName: authUser?.name || '',
     contactEmail: authUser?.email || '',
     contactPhone: authUser?.phone || '',
   })
+  const [secretData, setSecretData] = useState(initialSecretState)
   const [imageName, setImageName] = useState('')
   const [submissionError, setSubmissionError] = useState('')
   const [submissionSuccess, setSubmissionSuccess] = useState('')
@@ -56,12 +64,42 @@ function ReportItemPage({ authUser, onHome, onBack }) {
     setImageName(file ? file.name : '')
   }
 
+  const handleSecretChange = (event) => {
+    const { name, value } = event.target
+    setSecretData((current) => ({ ...current, [name]: value }))
+  }
+
+  const validatePublicDetails = () => {
+    if (!formData.title.trim() || !formData.description.trim() || !formData.lastSeenLocation.trim()) {
+      setSubmissionError('Please fill in the title, description, and location before moving to the next step.')
+      setSubmissionSuccess('')
+      return false
+    }
+
+    return true
+  }
+
+  const handleNextStep = () => {
+    setSubmissionError('')
+    if (!validatePublicDetails()) return
+    setFormStep(2)
+  }
+
+  const handleBackToDetails = () => {
+    setSubmissionError('')
+    setFormStep(1)
+  }
+
   const handleSubmit = (event) => {
     event.preventDefault()
     setSubmissionError('')
 
-    if (!formData.title.trim() || !formData.description.trim() || !formData.lastSeenLocation.trim()) {
-      setSubmissionError('Please fill in the title, description, and location before posting.')
+    if (!validatePublicDetails()) {
+      return
+    }
+
+    if (!secretData.privateIdentifier.trim() || !secretData.proofQuestion.trim() || !secretData.proofAnswer.trim()) {
+      setSubmissionError('Please provide all secret ownership details before posting the report.')
       setSubmissionSuccess('')
       return
     }
@@ -70,6 +108,7 @@ function ReportItemPage({ authUser, onHome, onBack }) {
       id: Date.now(),
       ...formData,
       imageName,
+      verificationDetails: { ...secretData },
       createdAt: new Date().toISOString(),
     }
 
@@ -82,7 +121,9 @@ function ReportItemPage({ authUser, onHome, onBack }) {
       contactEmail: authUser?.email || '',
       contactPhone: authUser?.phone || '',
     }))
+    setSecretData(initialSecretState)
     setImageName('')
+    setFormStep(1)
   }
 
   return (
@@ -151,173 +192,226 @@ function ReportItemPage({ authUser, onHome, onBack }) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">Report Type</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {itemTypes.map((item) => (
-                        <button
-                          key={item.value}
-                          type="button"
-                          onClick={() => setFormData((current) => ({ ...current, itemType: item.value }))}
-                          className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                            formData.itemType === item.value
-                                ? 'border-brand-300 bg-brand-50 text-brand-700'
-                              : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                          }`}
+                  {formStep === 1 ? (
+                    <>
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold text-slate-700">Report Type</label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {itemTypes.map((item) => (
+                            <button
+                              key={item.value}
+                              type="button"
+                              onClick={() => setFormData((current) => ({ ...current, itemType: item.value }))}
+                              className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                                formData.itemType === item.value
+                                  ? 'border-brand-300 bg-brand-50 text-brand-700'
+                                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                              }`}
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="category" className="block text-sm font-medium text-slate-700">
+                          Category
+                        </label>
+                        <select
+                          id="category"
+                          name="category"
+                          value={formData.category}
+                          onChange={handleChange}
+                          className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
                         >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                          {categories.map((category) => (
+                            <option key={category} value={category}>
+                              {category}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                  <div>
-                    <label htmlFor="category" className="block text-sm font-medium text-slate-700">
-                      Category
-                    </label>
-                    <select
-                      id="category"
-                      name="category"
-                      value={formData.category}
-                      onChange={handleChange}
-                      className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                    >
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                      <div>
+                        <label htmlFor="title" className="block text-sm font-medium text-slate-700">
+                          Item Title
+                        </label>
+                        <input
+                          id="title"
+                          name="title"
+                          value={formData.title}
+                          onChange={handleChange}
+                          placeholder="e.g. Black wallet with student ID"
+                          className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                        />
+                      </div>
 
-                  <div>
-                    <label htmlFor="title" className="block text-sm font-medium text-slate-700">
-                      Item Title
-                    </label>
-                    <input
-                      id="title"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleChange}
-                      placeholder="e.g. Black wallet with student ID"
-                      className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                    />
-                  </div>
+                      <div>
+                        <label htmlFor="description" className="block text-sm font-medium text-slate-700">
+                          Description
+                        </label>
+                        <textarea
+                          id="description"
+                          name="description"
+                          value={formData.description}
+                          onChange={handleChange}
+                          rows={4}
+                          placeholder="Describe the item, brand, color, unique marks, or condition."
+                          className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                        />
+                      </div>
 
-                  <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-slate-700">
-                      Description
-                    </label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      rows={4}
-                      placeholder="Describe the item, brand, color, unique marks, or condition."
-                      className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                    />
-                  </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label htmlFor="lastSeenLocation" className="block text-sm font-medium text-slate-700">
+                            Last Seen / Found Location
+                          </label>
+                          <input
+                            id="lastSeenLocation"
+                            name="lastSeenLocation"
+                            value={formData.lastSeenLocation}
+                            onChange={handleChange}
+                            placeholder="e.g. Main campus cafeteria"
+                            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="date" className="block text-sm font-medium text-slate-700">
+                            Date
+                          </label>
+                          <input
+                            id="date"
+                            name="date"
+                            type="date"
+                            value={formData.date}
+                            onChange={handleChange}
+                            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                          />
+                        </div>
+                      </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="lastSeenLocation" className="block text-sm font-medium text-slate-700">
-                        Last Seen / Found Location
-                      </label>
-                      <input
-                        id="lastSeenLocation"
-                        name="lastSeenLocation"
-                        value={formData.lastSeenLocation}
-                        onChange={handleChange}
-                        placeholder="e.g. Main campus cafeteria"
-                        className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="date" className="block text-sm font-medium text-slate-700">
-                        Date
-                      </label>
-                      <input
-                        id="date"
-                        name="date"
-                        type="date"
-                        value={formData.date}
-                        onChange={handleChange}
-                        className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                      />
-                    </div>
-                  </div>
+                      <div>
+                        <label htmlFor="itemImage" className="block text-sm font-medium text-slate-700">
+                          Photo
+                        </label>
+                        <input
+                          ref={fileInputRef}
+                          id="itemImage"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="sr-only"
+                        />
+                        <div className="mt-1 flex items-center gap-3 rounded-xl border border-dashed border-slate-300 px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                          >
+                            Choose file
+                          </button>
+                          <span className="text-sm text-slate-600">{imageName || 'No file chosen'}</span>
+                        </div>
+                        <p className="mt-2 text-xs text-slate-400">Optional, but photos improve match quality.</p>
+                        {imageName ? <p className="mt-1 text-xs font-medium text-slate-600">Selected: {imageName}</p> : null}
+                      </div>
 
-                  <div>
-                    <label htmlFor="itemImage" className="block text-sm font-medium text-slate-700">
-                      Photo
-                    </label>
-                    <input
-                      ref={fileInputRef}
-                      id="itemImage"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="sr-only"
-                    />
-                    <div className="mt-1 flex items-center gap-3 rounded-xl border border-dashed border-slate-300 px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-                      >
-                        Choose file
-                      </button>
-                      <span className="text-sm text-slate-600">{imageName || 'No file chosen'}</span>
-                    </div>
-                    <p className="mt-2 text-xs text-slate-400">Optional, but photos improve match quality.</p>
-                    {imageName ? <p className="mt-1 text-xs font-medium text-slate-600">Selected: {imageName}</p> : null}
-                  </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label htmlFor="contactName" className="block text-sm font-medium text-slate-700">
+                            Contact Name
+                          </label>
+                          <input
+                            id="contactName"
+                            name="contactName"
+                            value={formData.contactName}
+                            onChange={handleChange}
+                            placeholder="Your name"
+                            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="contactEmail" className="block text-sm font-medium text-slate-700">
+                            Contact Email
+                          </label>
+                          <input
+                            id="contactEmail"
+                            name="contactEmail"
+                            type="email"
+                            value={formData.contactEmail}
+                            onChange={handleChange}
+                            placeholder="name@example.com"
+                            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                          />
+                        </div>
+                      </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="contactName" className="block text-sm font-medium text-slate-700">
-                        Contact Name
-                      </label>
-                      <input
-                        id="contactName"
-                        name="contactName"
-                        value={formData.contactName}
-                        onChange={handleChange}
-                        placeholder="Your name"
-                        className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="contactEmail" className="block text-sm font-medium text-slate-700">
-                        Contact Email
-                      </label>
-                      <input
-                        id="contactEmail"
-                        name="contactEmail"
-                        type="email"
-                        value={formData.contactEmail}
-                        onChange={handleChange}
-                        placeholder="name@example.com"
-                        className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                      />
-                    </div>
-                  </div>
+                      <div>
+                        <label htmlFor="contactPhone" className="block text-sm font-medium text-slate-700">
+                          Contact Phone
+                        </label>
+                        <input
+                          id="contactPhone"
+                          name="contactPhone"
+                          type="tel"
+                          value={formData.contactPhone}
+                          onChange={handleChange}
+                          placeholder="01XXXXXXXXX"
+                          className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        Add private verification details that only the real owner can answer correctly.
+                      </div>
 
-                  <div>
-                    <label htmlFor="contactPhone" className="block text-sm font-medium text-slate-700">
-                      Contact Phone
-                    </label>
-                    <input
-                      id="contactPhone"
-                      name="contactPhone"
-                      type="tel"
-                      value={formData.contactPhone}
-                      onChange={handleChange}
-                      placeholder="01XXXXXXXXX"
-                      className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                    />
-                  </div>
+                      <div>
+                        <label htmlFor="privateIdentifier" className="block text-sm font-medium text-slate-700">
+                          Secret Identifier
+                        </label>
+                        <input
+                          id="privateIdentifier"
+                          name="privateIdentifier"
+                          value={secretData.privateIdentifier}
+                          onChange={handleSecretChange}
+                          placeholder="e.g. Last 4 digits, engraving text, hidden sticker, initials"
+                          className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="proofQuestion" className="block text-sm font-medium text-slate-700">
+                          Verification Question
+                        </label>
+                        <input
+                          id="proofQuestion"
+                          name="proofQuestion"
+                          value={secretData.proofQuestion}
+                          onChange={handleSecretChange}
+                          placeholder="e.g. What photo is inside the wallet?"
+                          className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="proofAnswer" className="block text-sm font-medium text-slate-700">
+                          Expected Answer
+                        </label>
+                        <textarea
+                          id="proofAnswer"
+                          name="proofAnswer"
+                          value={secretData.proofAnswer}
+                          onChange={handleSecretChange}
+                          rows={3}
+                          placeholder="Write the exact answer you expect from the claimant."
+                          className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {submissionError ? (
                     <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{submissionError}</div>
@@ -329,19 +423,40 @@ function ReportItemPage({ authUser, onHome, onBack }) {
                   ) : null}
 
                   <div className="flex gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={onBack || onHome}
-                      className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                    >
-                      Post Report
-                    </button>
+                    {formStep === 1 ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={onBack || onHome}
+                          className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleNextStep}
+                          className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                        >
+                          Next
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleBackToDetails}
+                          className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                        >
+                          Back
+                        </button>
+                        <button
+                          type="submit"
+                          className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                        >
+                          Post Report
+                        </button>
+                      </>
+                    )}
                   </div>
                 </form>
               </div>
