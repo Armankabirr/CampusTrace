@@ -233,22 +233,30 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
       />
 
       <main className="pt-24">
-        <section className="bg-gradient-to-br from-brand-500 via-orange-500 to-brand-600 px-4 pb-20 pt-16 text-white">
-          <div className="mx-auto flex max-w-6xl items-start justify-between gap-4">
-            <div className="space-y-2 text-sm text-white/80">
-              <p>Home / Profile</p>
+        <section className="relative w-full -mt-24 bg-[#E8612C] px-4 pb-12 pt-8 text-white">
+          {/* decorative faint circles */}
+          <div className="pointer-events-none absolute -right-16 -top-10 z-0 hidden md:block">
+            <div className="h-64 w-64 rounded-full bg-[#F18A62] opacity-10" />
+          </div>
+          <div className="pointer-events-none absolute -left-12 top-6 z-0 hidden md:block">
+            <div className="h-44 w-44 rounded-full bg-[#F18A62] opacity-08" />
+          </div>
+
+          <div className="relative z-10 mx-auto flex max-w-6xl items-start justify-between gap-4">
+            <div className="space-y-2 text-sm text-white/95">
+              <p className="font-medium">Home › Profile</p>
             </div>
 
             <button
               type="button"
               onClick={onSignOut}
-              className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
+              className="rounded-full border border-white px-4 py-2 text-sm font-semibold text-white bg-transparent transition hover:bg-white/10"
             >
-              Sign Out
+              + Sign Out
             </button>
           </div>
 
-          <div className="mx-auto mt-8 max-w-6xl rounded-[2rem] bg-white p-5 text-slate-900 shadow-soft sm:p-6 lg:p-8">
+          <div className="mx-auto mt-6 max-w-6xl rounded-[1.25rem] bg-white p-5 text-slate-900 shadow-soft sm:p-6 lg:p-8">
             <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
               <div className="relative flex-shrink-0">
                 <div className="grid h-32 w-32 place-items-center overflow-hidden rounded-[1.5rem] border-4 border-white bg-gradient-to-br from-orange-100 via-amber-50 to-white shadow-lg sm:h-36 sm:w-36">
