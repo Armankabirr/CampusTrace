@@ -3,10 +3,11 @@ import Stairs from './components/Stairs'
 import HomePage from './pages/HomePage'
 import Login from './pages/Login'
 import ProfilePage from './pages/ProfilePage'
+import ReportItemPage from './pages/ReportItemPage'
 import Sign from './pages/Sign'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', or 'profile'
+  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'profile', or 'report'
   const [prefilledLoginEmail, setPrefilledLoginEmail] = useState('')
   const [authUser, setAuthUser] = useState(null)
 
@@ -73,6 +74,10 @@ function App() {
     setCurrentPage('home')
   }
 
+  const handleReportItemClick = () => {
+    setCurrentPage('report')
+  }
+
   const handleSignOut = () => {
     localStorage.removeItem('accessToken')
     setAuthUser(null)
@@ -90,11 +95,20 @@ function App() {
     ) : currentPage === 'signup' ? (
       <Sign onBack={handleBackClick} onSwitchToLogin={handleSignupComplete} />
     ) : currentPage === 'profile' ? (
-      <ProfilePage authUser={authUser} onHome={handleHomeClick} onSignOut={handleSignOut} onAvatarClick={handleAvatarClick} />
+      <ProfilePage
+        authUser={authUser}
+        onHome={handleHomeClick}
+        onReportItem={handleReportItemClick}
+        onSignOut={handleSignOut}
+        onAvatarClick={handleAvatarClick}
+      />
+    ) : currentPage === 'report' ? (
+      <ReportItemPage authUser={authUser} onHome={handleHomeClick} onBack={handleHomeClick} />
     ) : (
       <HomePage
         onLogin={handleLoginClick}
         onSignup={handleSignupClick}
+        onReportItem={handleReportItemClick}
         onAvatarClick={handleAvatarClick}
         onHome={handleHomeClick}
         authUser={authUser}

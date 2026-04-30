@@ -51,7 +51,7 @@ function formatJoinedDate(dateValue) {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 }
 
-function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
+function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick }) {
   const [userData, setUserData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -206,7 +206,7 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
           onBrowse={onHome}
           onMatches={onHome}
           onAvatarClick={onAvatarClick}
-          onReportItem={onHome}
+          onReportItem={onReportItem || onHome}
         />
         <main className="pt-24">
           <div className="flex items-center justify-center py-20">
@@ -229,7 +229,7 @@ function ProfilePage({ authUser, onHome, onSignOut, onAvatarClick }) {
         onBrowse={onHome}
         onMatches={onHome}
         onAvatarClick={onAvatarClick}
-        onReportItem={onHome}
+        onReportItem={onReportItem || onHome}
       />
 
       <main className="pt-24">

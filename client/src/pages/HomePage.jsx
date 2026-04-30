@@ -42,7 +42,7 @@ const reasons = [
   'Real-time Notifications',
 ]
 
-function HomePage({ onLogin, onSignup, onAvatarClick, authUser, onHome }) {
+function HomePage({ onLogin, onSignup, onReportItem, onAvatarClick, authUser, onHome }) {
   const [parallaxY, setParallaxY] = useState(0)
 
   useEffect(() => {
@@ -81,7 +81,7 @@ function HomePage({ onLogin, onSignup, onAvatarClick, authUser, onHome }) {
         onLogin={onLogin}
         onSignup={onSignup}
         onAvatarClick={onAvatarClick}
-        onReportItem={onSignup}
+        onReportItem={onReportItem}
       />
 
       <main>
@@ -110,7 +110,7 @@ function HomePage({ onLogin, onSignup, onAvatarClick, authUser, onHome }) {
             </p>
 
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <button onClick={onSignup} className="rounded-xl bg-brand-500 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-950/30 transition hover:bg-brand-600" type="button">
+              <button onClick={onReportItem} className="rounded-xl bg-brand-500 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-950/30 transition hover:bg-brand-600" type="button">
                 Report an Item
               </button>
               <button onClick={onLogin} className="rounded-xl border border-white/30 bg-slate-800/35 px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/20" type="button">
@@ -213,7 +213,7 @@ function HomePage({ onLogin, onSignup, onAvatarClick, authUser, onHome }) {
               </p>
 
               <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <button onClick={onSignup} className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-brand-600 transition hover:bg-amber-50" type="button">
+                <button onClick={onReportItem} className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-brand-600 transition hover:bg-amber-50" type="button">
                   Report Your Item Now
                 </button>
                 <button onClick={onLogin} className="rounded-xl border border-white/60 bg-white/20 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/30" type="button">
