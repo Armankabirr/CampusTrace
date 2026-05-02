@@ -42,7 +42,7 @@ const reasons = [
   'Real-time Notifications',
 ]
 
-function HomePage({ onLogin, onSignup, onReportItem, onAvatarClick, authUser, onHome }) {
+function HomePage({ onLogin, onSignup, onReportItem, onAvatarClick, authUser, onHome, onBrowse }) {
   const [parallaxY, setParallaxY] = useState(0)
 
   useEffect(() => {
@@ -76,7 +76,7 @@ function HomePage({ onLogin, onSignup, onReportItem, onAvatarClick, authUser, on
         authUser={authUser}
         activePage="home"
         onHome={onHome}
-        onBrowse={onHome}
+        onBrowse={onBrowse}
         onMatches={onHome}
         onLogin={onLogin}
         onSignup={onSignup}
@@ -113,7 +113,7 @@ function HomePage({ onLogin, onSignup, onReportItem, onAvatarClick, authUser, on
               <button onClick={onReportItem} className="rounded-xl bg-brand-500 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-950/30 transition hover:bg-brand-600" type="button">
                 Report an Item
               </button>
-              <button onClick={onLogin} className="rounded-xl border border-white/30 bg-slate-800/35 px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/20" type="button">
+              <button onClick={onBrowse} className="rounded-xl border border-white/30 bg-slate-800/35 px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/20" type="button">
                 Browse Items
               </button>
             </div>
@@ -216,7 +216,7 @@ function HomePage({ onLogin, onSignup, onReportItem, onAvatarClick, authUser, on
                 <button onClick={onReportItem} className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-brand-600 transition hover:bg-amber-50" type="button">
                   Report Your Item Now
                 </button>
-                <button onClick={onLogin} className="rounded-xl border border-white/60 bg-white/20 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/30" type="button">
+                <button onClick={onBrowse} className="rounded-xl border border-white/60 bg-white/20 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/30" type="button">
                   Browse Items
                 </button>
               </div>

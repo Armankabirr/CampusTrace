@@ -5,10 +5,11 @@ import Login from './pages/Login'
 import ForgotPassword from './pages/ForgotPassword'
 import ProfilePage from './pages/ProfilePage'
 import ReportItemPage from './pages/ReportItemPage'
+import BrowsePage from './pages/BrowsePage'
 import Sign from './pages/Sign'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'forgot-password', 'profile', or 'report'
+  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'forgot-password', 'profile', 'report', or 'browse'
   const [prefilledLoginEmail, setPrefilledLoginEmail] = useState('')
   const [authUser, setAuthUser] = useState(null)
 
@@ -79,6 +80,10 @@ function App() {
     setCurrentPage('report')
   }
 
+  const handleBrowseClick = () => {
+    setCurrentPage('browse')
+  }
+
   const handleSignOut = () => {
     localStorage.removeItem('accessToken')
     setAuthUser(null)
@@ -119,11 +124,20 @@ function App() {
       />
     ) : currentPage === 'report' ? (
       <ReportItemPage authUser={authUser} onHome={handleHomeClick} onBack={handleHomeClick} />
+    ) : currentPage === 'browse' ? (
+      <BrowsePage
+        authUser={authUser}
+        onHome={handleHomeClick}
+        onBrowse={handleBrowseClick}
+        onReportItem={handleReportItemClick}
+        onAvatarClick={handleAvatarClick}
+      />
     ) : (
       <HomePage
         onLogin={handleLoginClick}
         onSignup={handleSignupClick}
         onReportItem={handleReportItemClick}
+        onBrowse={handleBrowseClick}
         onAvatarClick={handleAvatarClick}
         onHome={handleHomeClick}
         authUser={authUser}
