@@ -19,6 +19,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 
+app.use((error, req, res, next) => {
+	if (error?.code === 'LIMIT_FILE_SIZE') {
+		return res.status(413).json({ message: 'Uploaded file is too large.' });
+	}
+
+	return res.status(error?.status || 500).json({
+		message: error?.message || 'Internal server error',
+	});
+});
+
 app.get('/', (req, res) => {
 	res.json({
 		message: 'CampusTrace API is running',

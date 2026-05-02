@@ -31,6 +31,7 @@ const config = {
   accessTokenExpiry: process.env.ACCESS_TOKEN_EXPIRY || '15m',
   refreshTokenExpiry: process.env.REFRESH_TOKEN_EXPIRY || '7d',
   otpExpiryMinutes: Number(process.env.OTP_EXPIRY_MINUTES || 10),
+  uploadMaxFileSizeBytes: Number(process.env.UPLOAD_MAX_FILE_SIZE_MB || 10) * 1024 * 1024,
   cookieSecure: process.env.COOKIE_SECURE === 'true',
   cookieDomain: process.env.COOKIE_DOMAIN || undefined,
   googleClientId: process.env.GOOGLE_CLIENT_ID,
