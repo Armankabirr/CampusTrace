@@ -45,9 +45,11 @@ function ReportItemPage({ authUser, onHome, onBack }) {
   })
   const [secretData, setSecretData] = useState(initialSecretState)
   const [imageName, setImageName] = useState('')
+  const [selectedImageFile, setSelectedImageFile] = useState(null)
   const [submissionError, setSubmissionError] = useState('')
   const [submissionSuccess, setSubmissionSuccess] = useState('')
   const [recentPosts, setRecentPosts] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
 
   const submitTone = useMemo(
     () => (formData.itemType === 'lost' ? 'bg-slate-900' : 'bg-slate-800'),
@@ -62,6 +64,7 @@ function ReportItemPage({ authUser, onHome, onBack }) {
   const handleImageChange = (event) => {
     const file = event.target.files?.[0]
     setImageName(file ? file.name : '')
+    setSelectedImageFile(file || null)
   }
 
   const handleSecretChange = (event) => {
@@ -70,8 +73,24 @@ function ReportItemPage({ authUser, onHome, onBack }) {
   }
 
   const validatePublicDetails = () => {
-    if (!formData.title.trim() || !formData.description.trim() || !formData.lastSeenLocation.trim()) {
+    const title = formData.title.trim()
+    const description = formData.description.trim()
+    const location = formData.lastSeenLocation.trim()
+
+    if (!title || !description || !location) {
       setSubmissionError('Please fill in the title, description, and location before moving to the next step.')
+      setSubmissionSuccess('')
+      return false
+    }
+
+    if (title.length < 3) {
+      setSubmissionError('Title must be at least 3 characters long.')
+      setSubmissionSuccess('')
+      return false
+    }
+
+    if (description.length < 10) {
+      setSubmissionError('Description must be at least 10 characters long.')
       setSubmissionSuccess('')
       return false
     }
@@ -90,40 +109,107 @@ function ReportItemPage({ authUser, onHome, onBack }) {
     setFormStep(1)
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     setSubmissionError('')
+    setIsLoading(true)
 
     if (!validatePublicDetails()) {
+      setIsLoading(false)
       return
     }
 
     if (!secretData.privateIdentifier.trim() || !secretData.proofQuestion.trim() || !secretData.proofAnswer.trim()) {
       setSubmissionError('Please provide all secret ownership details before posting the report.')
       setSubmissionSuccess('')
+      setIsLoading(false)
       return
     }
 
-    const entry = {
-      id: Date.now(),
-      ...formData,
-      imageName,
-      verificationDetails: { ...secretData },
-      createdAt: new Date().toISOString(),
-    }
+    try {
+      // Create FormData object to send file and form data
+      const formDataToSend = new FormData()
+      
+      // Add form fields
+      formDataToSend.append('itemType', formData.itemType)
+      formDataToSend.append('category', formData.category)
+      formDataToSend.append('title', formData.title)
+      formDataToSend.append('description', formData.description)
+      formDataToSend.append('lastSeenLocation', formData.lastSeenLocation)
+      formDataToSend.append('date', formData.date)
+      formDataToSend.append('contactName', formData.contactName)
+      formDataToSend.append('contactEmail', formData.contactEmail)
+      formDataToSend.append('contactPhone', formData.contactPhone)
+      formDataToSend.append('verificationDetails', JSON.stringify(secretData))
 
-    setRecentPosts((current) => [entry, ...current].slice(0, 4))
-    setSubmissionSuccess(`Your ${formData.itemType} report has been posted.`)
-    setFormData((current) => ({
-      ...initialFormState,
-      itemType: current.itemType,
-      contactName: authUser?.name || '',
-      contactEmail: authUser?.email || '',
-      contactPhone: authUser?.phone || '',
-    }))
-    setSecretData(initialSecretState)
-    setImageName('')
-    setFormStep(1)
+      // Add image file if selected
+      if (selectedImageFile) {
+        formDataToSend.append('image', selectedImageFile)
+      }
+
+      const accessToken = localStorage.getItem('accessToken')
+      if (!accessToken) {
+        throw new Error('Authentication required. Please log in again.')
+      }
+
+      // Submit to backend
+      const response = await fetch('http://localhost:3000/api/reports/create', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formDataToSend,
+      }).catch((err) => {
+        throw new Error(`Network error: Make sure the server is running on http://localhost:3000. ${err.message}`)
+      })
+
+      let data
+      try {
+        data = await response.json()
+      } catch {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || `Failed to create report (HTTP ${response.status})`)
+      }
+
+      setSubmissionSuccess(`Your ${formData.itemType} report has been posted successfully. Check back soon for matches!`)
+      
+      // Add to recent posts for UI
+      const entry = {
+        id: data.report.id,
+        ...formData,
+        imageName,
+        imageUrl: data.report.imageUrl,
+        verificationDetails: { ...secretData },
+        createdAt: new Date().toISOString(),
+      }
+      setRecentPosts((current) => [entry, ...current].slice(0, 4))
+
+      // Reset form
+      setFormData((current) => ({
+        ...initialFormState,
+        itemType: current.itemType,
+        contactName: authUser?.name || '',
+        contactEmail: authUser?.email || '',
+        contactPhone: authUser?.phone || '',
+      }))
+      setSecretData(initialSecretState)
+      setImageName('')
+      setSelectedImageFile(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+      setFormStep(1)
+    } catch (error) {
+      console.error('Report submission error:', error)
+      setSubmissionError(error.message || 'Failed to create report. Please try again.')
+      setSubmissionSuccess('')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -435,7 +521,8 @@ function ReportItemPage({ authUser, onHome, onBack }) {
                         <button
                           type="button"
                           onClick={handleNextStep}
-                          className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                          className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={isLoading}
                         >
                           Next
                         </button>
@@ -446,14 +533,16 @@ function ReportItemPage({ authUser, onHome, onBack }) {
                           type="button"
                           onClick={handleBackToDetails}
                           className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                          disabled={isLoading}
                         >
                           Back
                         </button>
                         <button
                           type="submit"
-                          className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                          className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={isLoading}
                         >
-                          Post Report
+                          {isLoading ? 'Uploading...' : 'Post Report'}
                         </button>
                       </>
                     )}

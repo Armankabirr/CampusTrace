@@ -37,6 +37,9 @@ const config = {
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
   googleRefreshToken: process.env.GOOGLE_REFRESH_TOKEN,
   googleUser: process.env.GOOGLE_USER,
+  imagekitPrivateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+  imagekitPublicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+  imagekitUrlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
 };
 
 export default config;
