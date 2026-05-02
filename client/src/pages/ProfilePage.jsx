@@ -233,7 +233,7 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick 
       />
 
       <main className="pt-24">
-        <section className="relative w-full -mt-24 bg-[#E8612C] px-4 pb-12 pt-8 text-white">
+        <section className="relative w-full -mt-24 bg-[#E8612C] px-4 pb-12 pt-12 text-white">
           {/* decorative faint circles */}
           <div className="pointer-events-none absolute -right-16 -top-10 z-0 hidden md:block">
             <div className="h-64 w-64 rounded-full bg-[#F18A62] opacity-10" />
@@ -246,14 +246,6 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick 
             <div className="space-y-2 text-sm text-white/95">
               <p className="font-medium">Home › Profile</p>
             </div>
-
-            <button
-              type="button"
-              onClick={onSignOut}
-              className="rounded-full border border-white px-4 py-2 text-sm font-semibold text-white bg-transparent transition hover:bg-white/10"
-            >
-              + Sign Out
-            </button>
           </div>
 
           <div className="mx-auto mt-6 max-w-6xl rounded-[1.25rem] bg-white p-5 text-slate-900 shadow-soft sm:p-6 lg:p-8">
@@ -302,14 +294,6 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick 
                     <p className="text-3xl font-bold text-brand-600">96</p>
                     <p className="text-xs text-slate-500">Trust Score</p>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={handleOpenEdit}
-                    className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-brand-200 hover:text-brand-600"
-                  >
-                    Edit Profile
-                  </button>
                 </div>
 
                 <div className="mt-8 max-w-3xl rounded-3xl bg-slate-900 px-5 py-4 text-white shadow-lg">
@@ -323,6 +307,26 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick 
                       <p className="font-bold tracking-[0.3em] text-white">{studentId}</p>
                     </div>
                   </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={handleOpenEdit}
+                    className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-brand-200 hover:text-brand-600"
+                  >
+                    Edit Profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onSignOut}
+                    className="inline-flex items-center gap-2 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Sign Out
+                  </button>
                 </div>
               </div>
             </div>

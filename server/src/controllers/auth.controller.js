@@ -342,3 +342,95 @@ export const logoutAll = async (req, res) => {
     return res.status(500).json({ message: error.message || 'Failed to logout all sessions.' });
   }
 };
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required.' });
+    }
+
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User with this email not found.' });
+    }
+
+    const otp = generateOtp();
+    const otpHash = hashValue(otp);
+    const expiresAt = new Date(Date.now() + config.otpExpiryMinutes * 60 * 1000);
+
+    await Otp.findOneAndUpdate(
+      { email: normalizedEmail },
+      {
+        email: normalizedEmail,
+        otpHash,
+        type: 'password_reset',
+        userId: user._id,
+        attempts: 0,
+        expiresAt,
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    await sendOtpEmail({ to: normalizedEmail, otp, type: 'password_reset' });
+
+    return res.status(200).json({
+      message: 'OTP sent to your email. Use it to reset your password.',
+      email: normalizedEmail,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Failed to process forgot password request.' });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: 'Email, OTP, and new password are required.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    }
+
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const otpRecord = await Otp.findOne({ email: normalizedEmail });
+
+    if (!otpRecord) {
+      return res.status(404).json({ message: 'OTP session not found.' });
+    }
+
+    if (otpRecord.expiresAt.getTime() < Date.now()) {
+      await Otp.deleteOne({ _id: otpRecord._id });
+      return res.status(410).json({ message: 'OTP expired.' });
+    }
+
+    if (otpRecord.otpHash !== hashValue(String(otp))) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+      return res.status(400).json({ message: 'Invalid OTP.' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const passwordHash = await bcrypt.hash(String(newPassword), 10);
+    await User.findByIdAndUpdate(user._id, { password: passwordHash });
+
+    await Otp.deleteOne({ _id: otpRecord._id });
+
+    return res.status(200).json({
+      message: 'Password reset successfully. You can now login with your new password.',
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Failed to reset password.' });
+  }
+};

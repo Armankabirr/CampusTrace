@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import Stairs from './components/Stairs'
 import HomePage from './pages/HomePage'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
 import ProfilePage from './pages/ProfilePage'
 import ReportItemPage from './pages/ReportItemPage'
 import Sign from './pages/Sign'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'profile', or 'report'
+  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'forgot-password', 'profile', or 'report'
   const [prefilledLoginEmail, setPrefilledLoginEmail] = useState('')
   const [authUser, setAuthUser] = useState(null)
 
@@ -84,6 +85,14 @@ function App() {
     setCurrentPage('home')
   }
 
+  const handleForgotPasswordClick = () => {
+    setCurrentPage('forgot-password')
+  }
+
+  const handleBackToLoginFromForgotPassword = () => {
+    setCurrentPage('login')
+  }
+
   const page =
     currentPage === 'login' ? (
       <Login
@@ -91,6 +100,12 @@ function App() {
         onSwitchToSignup={handleSignupClick}
         initialEmail={prefilledLoginEmail}
         onLoginSuccess={handleLoginSuccess}
+        onForgotPassword={handleForgotPasswordClick}
+      />
+    ) : currentPage === 'forgot-password' ? (
+      <ForgotPassword
+        onBack={handleBackClick}
+        onBackToLogin={handleBackToLoginFromForgotPassword}
       />
     ) : currentPage === 'signup' ? (
       <Sign onBack={handleBackClick} onSwitchToLogin={handleSignupComplete} />

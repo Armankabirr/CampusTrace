@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import loginBg from '../assets/Login_background.jpg'
 
-function Login({ onBack, onSwitchToSignup, initialEmail = '', onLoginSuccess }) {
+function Login({ onBack, onSwitchToSignup, initialEmail = '', onLoginSuccess, onForgotPassword }) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -237,9 +237,13 @@ function Login({ onBack, onSwitchToSignup, initialEmail = '', onLoginSuccess }) 
                 </div>
 
                 <div className='flex justify-end'>
-                  <a href='#' className='text-sm text-orange-600 hover:text-orange-700 font-medium'>
+                  <button
+                    type='button'
+                    onClick={onForgotPassword}
+                    className='text-sm text-orange-600 hover:text-orange-700 font-medium transition'
+                  >
                     Forgot password?
-                  </a>
+                  </button>
                 </div>
 
                 <button

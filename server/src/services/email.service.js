@@ -8,13 +8,25 @@ const escapeHtml = (value) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 
-const buildMimeMessage = ({ to, otp }) => {
-  const subject = 'CampusTrace OTP Verification';
-  const text = `Your CampusTrace verification code is ${otp}. It expires in ${config.otpExpiryMinutes} minutes.`;
+const buildMimeMessage = ({ to, otp, type = 'signup' }) => {
+  let subject, text, heading, description;
+
+  if (type === 'password_reset') {
+    subject = 'CampusTrace Password Reset OTP';
+    heading = 'Reset your password';
+    description = 'Use the OTP below to reset your password.';
+    text = `Your CampusTrace password reset code is ${otp}. It expires in ${config.otpExpiryMinutes} minutes.`;
+  } else {
+    subject = 'CampusTrace OTP Verification';
+    heading = 'Verify your account';
+    description = 'Use the OTP below to complete signup.';
+    text = `Your CampusTrace verification code is ${otp}. It expires in ${config.otpExpiryMinutes} minutes.`;
+  }
+
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
-      <h2 style="margin-bottom: 8px;">Verify your account</h2>
-      <p style="margin-top: 0; color: #555;">Use the OTP below to complete signup.</p>
+      <h2 style="margin-bottom: 8px;">${heading}</h2>
+      <p style="margin-top: 0; color: #555;">${description}</p>
       <div style="font-size: 32px; letter-spacing: 6px; font-weight: bold; margin: 20px 0;">${escapeHtml(otp)}</div>
       <p style="color: #777;">This OTP will expire in ${config.otpExpiryMinutes} minutes.</p>
     </div>
@@ -71,10 +83,10 @@ const refreshGmailAccessToken = async () => {
   return tokenData.access_token;
 };
 
-export const sendOtpEmail = async ({ to, otp }) => {
+export const sendOtpEmail = async ({ to, otp, type = 'signup' }) => {
   try {
     const accessToken = await refreshGmailAccessToken();
-    const raw = buildMimeMessage({ to, otp });
+    const raw = buildMimeMessage({ to, otp, type });
 
     const sendResponse = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
       method: 'POST',
