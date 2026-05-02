@@ -130,7 +130,7 @@ function BrowsePage({ authUser, onHome, onBrowse, onReportItem, onAvatarClick })
                 className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
               >
                 {categories.map((cat) => (
-                  <option key={cat} value={cat.toLowerCase()}>
+                  <option key={cat} value={cat === 'All categories' ? 'all' : cat.toLowerCase()}>
                     {cat}
                   </option>
                 ))}
