@@ -434,3 +434,37 @@ export const resetPassword = async (req, res) => {
     return res.status(500).json({ message: error.message || 'Failed to reset password.' });
   }
 };
+
+export const verifyResetOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email and OTP are required.' });
+    }
+
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const otpRecord = await Otp.findOne({ email: normalizedEmail });
+
+    if (!otpRecord) {
+      return res.status(404).json({ message: 'OTP session not found.' });
+    }
+
+    if (otpRecord.expiresAt.getTime() < Date.now()) {
+      await Otp.deleteOne({ _id: otpRecord._id });
+      return res.status(410).json({ message: 'OTP expired.' });
+    }
+
+    if (otpRecord.otpHash !== hashValue(String(otp))) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+      return res.status(400).json({ message: 'Invalid OTP.' });
+    }
+
+    return res.status(200).json({
+      message: 'OTP verified successfully.',
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Failed to verify OTP.' });
+  }
+};

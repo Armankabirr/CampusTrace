@@ -9,6 +9,7 @@ import {
   updateProfile,
   verifyEmail,
   forgotPassword,
+  verifyResetOtp,
   resetPassword,
 } from '../controllers/auth.controller.js';
 import { requireAuth } from '../middlewares/auth.middleware.js';
@@ -19,6 +20,7 @@ router.post('/register', register);
 router.post('/verify-email', verifyEmail);
 router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
+router.post('/verify-reset-otp', verifyResetOtp);
 router.post('/reset-password', resetPassword);
 router.get('/get-me', requireAuth, getMe);
 router.put('/update-profile', requireAuth, updateProfile);

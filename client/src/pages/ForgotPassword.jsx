@@ -2,7 +2,7 @@ import { useState } from 'react'
 import loginBg from '../assets/Login_background.jpg'
 
 function ForgotPassword({ onBack, onBackToLogin }) {
-  const [stage, setStage] = useState('email') // 'email' or 'reset'
+  const [stage, setStage] = useState('email') // 'email', 'verify-otp', or 'password'
   const [formData, setFormData] = useState({
     email: '',
     otp: '',
@@ -38,12 +38,19 @@ function ForgotPassword({ onBack, onBackToLogin }) {
     return Object.keys(newErrors).length === 0
   }
 
-  const validateResetStage = () => {
+  const validateOtpStage = () => {
     const newErrors = {}
 
-    if (!formData.otp || formData.otp.length !== 6) {
+    if (!formData.otp || formData.otp.length !== 6 || !/^\d+$/.test(formData.otp)) {
       newErrors.otp = 'Please enter a valid 6-digit OTP'
     }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const validatePasswordStage = () => {
+    const newErrors = {}
 
     if (!formData.newPassword || formData.newPassword.length < 6) {
       newErrors.newPassword = 'Password must be at least 6 characters'
@@ -80,7 +87,7 @@ function ForgotPassword({ onBack, onBackToLogin }) {
         setSuccessMessage('OTP sent to your email. Please check your inbox.')
         setErrors({})
         setTimeout(() => {
-          setStage('reset')
+          setStage('verify-otp')
           setSuccessMessage('')
         }, 2000)
       } else {
@@ -99,10 +106,53 @@ function ForgotPassword({ onBack, onBackToLogin }) {
     }
   }
 
-  const handleResetSubmit = async (e) => {
+  const handleVerifyOtp = async (e) => {
     e.preventDefault()
 
-    if (!validateResetStage()) {
+    if (!validateOtpStage()) {
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch('/api/auth/verify-reset-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          otp: formData.otp,
+        }),
+      })
+
+      if (response.ok) {
+        setSuccessMessage('OTP verified! Now create your new password.')
+        setErrors({})
+        setTimeout(() => {
+          setStage('password')
+          setSuccessMessage('')
+        }, 1500)
+      } else {
+        try {
+          const error = await response.json()
+          setErrors({ form: error.message || 'Invalid OTP' })
+        } catch {
+          setErrors({ form: `Error: ${response.status} ${response.statusText}` })
+        }
+      }
+    } catch (error) {
+      console.error('OTP verification error:', error)
+      setErrors({ form: 'Network error. Please try again.' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!validatePasswordStage()) {
       return
     }
 
@@ -244,12 +294,14 @@ function ForgotPassword({ onBack, onBackToLogin }) {
                   CT
                 </div>
                 <h1 className='text-2xl sm:text-[2rem] font-bold text-gray-900 mb-2'>
-                  {stage === 'email' ? 'Forgot Password?' : 'Reset Password'}
+                  {stage === 'email' ? 'Forgot Password?' : stage === 'verify-otp' ? 'Verify OTP' : 'Create New Password'}
                 </h1>
                 <p className='text-sm text-gray-600'>
                   {stage === 'email'
                     ? 'Enter your email to receive a verification code'
-                    : 'Enter the OTP and your new password'}
+                    : stage === 'verify-otp'
+                    ? 'Enter the OTP sent to your email'
+                    : 'Enter your new password'}
                 </p>
               </div>
 
@@ -265,7 +317,7 @@ function ForgotPassword({ onBack, onBackToLogin }) {
                 </div>
               )}
 
-              {stage === 'email' ? (
+              {stage === 'email' && (
                 <form onSubmit={handleEmailSubmit} className='space-y-4'>
                   <div>
                     <label htmlFor='email' className='block text-sm font-medium text-gray-700 mb-1'>
@@ -295,8 +347,10 @@ function ForgotPassword({ onBack, onBackToLogin }) {
                     {loading ? 'Sending OTP...' : 'Send OTP'}
                   </button>
                 </form>
-              ) : (
-                <form onSubmit={handleResetSubmit} className='space-y-4'>
+              )}
+
+              {stage === 'verify-otp' && (
+                <form onSubmit={handleVerifyOtp} className='space-y-4'>
                   <div>
                     <label htmlFor='otp' className='block text-sm font-medium text-gray-700 mb-1'>
                       Verification Code
@@ -318,6 +372,27 @@ function ForgotPassword({ onBack, onBackToLogin }) {
                     {errors.otp && <p className='text-red-600 text-xs mt-1'>{errors.otp}</p>}
                   </div>
 
+                  <div className='flex gap-3'>
+                    <button
+                      type='button'
+                      onClick={() => setStage('email')}
+                      className='flex-1 border-2 border-orange-500 text-orange-600 font-medium py-2.5 rounded-lg hover:bg-orange-50 transition'
+                    >
+                      Back
+                    </button>
+                    <button
+                      type='submit'
+                      disabled={loading}
+                      className='flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium py-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg'
+                    >
+                      {loading ? 'Verifying OTP...' : 'Next'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {stage === 'password' && (
+                <form onSubmit={handlePasswordSubmit} className='space-y-4'>
                   <div>
                     <label htmlFor='newPassword' className='block text-sm font-medium text-gray-700 mb-1'>
                       New Password
@@ -358,13 +433,22 @@ function ForgotPassword({ onBack, onBackToLogin }) {
                     {errors.confirmPassword && <p className='text-red-600 text-xs mt-1'>{errors.confirmPassword}</p>}
                   </div>
 
-                  <button
-                    type='submit'
-                    disabled={loading}
-                    className='w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium py-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg'
-                  >
-                    {loading ? 'Resetting Password...' : 'Reset Password'}
-                  </button>
+                  <div className='flex gap-3'>
+                    <button
+                      type='button'
+                      onClick={() => setStage('verify-otp')}
+                      className='flex-1 border-2 border-orange-500 text-orange-600 font-medium py-2.5 rounded-lg hover:bg-orange-50 transition'
+                    >
+                      Back
+                    </button>
+                    <button
+                      type='submit'
+                      disabled={loading}
+                      className='flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium py-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg'
+                    >
+                      {loading ? 'Resetting Password...' : 'Reset Password'}
+                    </button>
+                  </div>
                 </form>
               )}
 
