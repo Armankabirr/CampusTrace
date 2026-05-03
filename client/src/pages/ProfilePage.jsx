@@ -59,10 +59,13 @@ function formatActivityDate(dateValue) {
 function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick }) {
   const [userData, setUserData] = useState(null)
   const [userReports, setUserReports] = useState([])
+  const [userClaims, setUserClaims] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reportsLoading, setReportsLoading] = useState(true)
   const [reportsError, setReportsError] = useState(null)
+  const [claimsLoading, setClaimsLoading] = useState(true)
+  const [claimsError, setClaimsError] = useState(null)
   const [activeTab, setActiveTab] = useState('Recent Activity')
   const [isEditMode, setIsEditMode] = useState(false)
   const [editFormData, setEditFormData] = useState({
@@ -148,6 +151,44 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick 
     }
 
     fetchUserReports()
+  }, [])
+
+  useEffect(() => {
+    const fetchUserClaims = async () => {
+      try {
+        setClaimsLoading(true)
+        const token = localStorage.getItem('accessToken')
+
+        if (!token) {
+          setClaimsError('No access token found')
+          setClaimsLoading(false)
+          return
+        }
+
+        const response = await fetch('/api/claims/my-claims', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch your claims')
+        }
+
+        const data = await response.json()
+        setUserClaims(data.claims || [])
+        setClaimsError(null)
+      } catch (err) {
+        console.error('Error fetching user claims:', err)
+        setClaimsError(err.message)
+      } finally {
+        setClaimsLoading(false)
+      }
+    }
+
+    fetchUserClaims()
   }, [])
 
   const handleOpenEdit = () => {
@@ -242,6 +283,18 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick 
     { label: 'Phone Number', value: displayUser?.phone || 'Loading...', icon: 'P' },
     { label: 'Location', value: displayUser?.location || 'Dhaka, Bangladesh', icon: 'L' },
   ]
+
+  const formatClaimStatus = (status) => {
+    if (!status) return 'Pending'
+    return status.charAt(0).toUpperCase() + status.slice(1)
+  }
+
+  const getClaimBadgeTone = (status) => {
+    const normalized = (status || '').toLowerCase()
+    if (normalized === 'completed' || normalized === 'verified') return 'bg-emerald-100 text-emerald-700'
+    if (normalized === 'rejected') return 'bg-red-100 text-red-700'
+    return 'bg-amber-100 text-amber-700'
+  }
 
   if (error) {
     return (
@@ -480,11 +533,79 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick 
           )}
 
           {activeTab === 'My Claims' && (
-            <div className="mx-auto mt-6 max-w-6xl rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-              <h2 className="text-lg font-bold text-slate-900">My Claims</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                Claim tracking will appear here when claim requests are available.
-              </p>
+            <div className="mx-auto mt-6 max-w-6xl rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-slate-900">My Claims</h2>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                  {userClaims.length} Claims
+                </span>
+              </div>
+
+              {claimsLoading && <p className="text-sm text-slate-500">Loading your claims...</p>}
+
+              {!claimsLoading && claimsError && (
+                <p className="text-sm font-medium text-red-600">Error loading claims: {claimsError}</p>
+              )}
+
+              {!claimsLoading && !claimsError && userClaims.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                  <p className="text-sm text-slate-600">You have not submitted any claims yet.</p>
+                </div>
+              )}
+
+              {!claimsLoading && !claimsError && userClaims.length > 0 && (
+                <div className="space-y-3">
+                  {userClaims.map((claim) => (
+                    <article
+                      key={claim._id}
+                      className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                          {claim.reportId?.imageUrl ? (
+                            <img
+                              src={claim.reportId.imageUrl}
+                              alt={claim.reportId?.title || 'Claimed report image'}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-xl text-slate-400">
+                              📄
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                                claim.reportId?.itemType?.toLowerCase() === 'lost'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-emerald-100 text-emerald-700'
+                              }`}
+                            >
+                              {claim.reportId?.itemType || 'Unknown'}
+                            </span>
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                              {formatActivityDate(claim.createdAt)}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-sm font-semibold text-slate-900">
+                            {claim.reportId?.title || 'Claimed report'}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {claim.reportId?.category || 'Uncategorized'} • {claim.reportId?.lastSeenLocation || 'Unknown location'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold ${getClaimBadgeTone(claim.status)}`}>
+                        Status: {formatClaimStatus(claim.status)}
+                      </span>
+                    </article>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

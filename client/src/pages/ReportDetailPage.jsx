@@ -96,10 +96,20 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId }) {
         body: JSON.stringify(claimPayload),
       })
 
-      const data = await response.json()
+      const text = await response.text()
+      let data
+      try {
+        data = text ? JSON.parse(text) : {}
+      } catch (err) {
+        // Non-JSON response (HTML or empty). Provide a helpful error.
+        if (!response.ok) {
+          throw new Error(`Server error ${response.status}: ${response.statusText}`)
+        }
+        throw new Error('Invalid server response')
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to submit verification')
+        throw new Error(data.message || `Failed to submit verification (${response.status})`)
       }
 
       setClaimMessage(data.message || 'Verification submitted successfully.')
@@ -203,6 +213,19 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId }) {
                 <h2 className="font-bold text-lg mb-2">Description</h2>
                 <p className="text-slate-600 leading-relaxed">{report.description}</p>
               </div>
+
+              {/* Show verification questions on the page for found items (debug / UX) */}
+              {!isLostItem && proofQuestions.length > 0 && (
+                <div className="bg-white rounded-lg p-6 mb-6">
+                  <h2 className="font-bold text-lg mb-2">Verification Questions</h2>
+                  <ol className="list-decimal list-inside text-slate-700 space-y-2">
+                    {proofQuestions.map((q, i) => (
+                      <li key={i}>{q.question}</li>
+                    ))}
+                  </ol>
+                  <p className="mt-2 text-sm text-slate-500">Click the button to answer these questions and claim this item.</p>
+                </div>
+              )}
 
               <div className="bg-white rounded-lg p-6 mb-6 space-y-3">
                 <div>
