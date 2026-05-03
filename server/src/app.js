@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.route.js';
 import reportRoutes from './routes/report.route.js';
+import claimRoutes from './routes/claim.route.js';
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/claims', claimRoutes);
 
 app.use((error, req, res, next) => {
 	if (error?.code === 'LIMIT_FILE_SIZE') {

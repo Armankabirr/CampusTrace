@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 
-function BrowsePage({ authUser, onHome, onBrowse, onReportItem, onAvatarClick }) {
+function BrowsePage({ authUser, onHome, onBrowse, onReportItem, onAvatarClick, onViewReport }) {
   const [reports, setReports] = useState([])
   const [filteredReports, setFilteredReports] = useState([])
   const [loading, setLoading] = useState(true)
@@ -292,7 +292,10 @@ function BrowsePage({ authUser, onHome, onBrowse, onReportItem, onAvatarClick })
                     </div>
 
                     {/* View Details Button */}
-                    <button className="mt-4 w-full py-2 px-3 bg-slate-50 hover:bg-brand-50 text-slate-700 hover:text-brand-600 rounded-lg font-medium transition text-sm">
+                    <button
+                      onClick={() => onViewReport(report._id, report.itemType)}
+                      className="mt-4 w-full py-2 px-3 bg-slate-50 hover:bg-brand-50 text-slate-700 hover:text-brand-600 rounded-lg font-medium transition text-sm"
+                    >
                       View Details
                     </button>
                   </div>

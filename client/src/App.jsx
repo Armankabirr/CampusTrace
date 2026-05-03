@@ -6,12 +6,14 @@ import ForgotPassword from './pages/ForgotPassword'
 import ProfilePage from './pages/ProfilePage'
 import ReportItemPage from './pages/ReportItemPage'
 import BrowsePage from './pages/BrowsePage'
+import ReportDetailPage from './pages/ReportDetailPage'
 import Sign from './pages/Sign'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'forgot-password', 'profile', 'report', or 'browse'
+  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'forgot-password', 'profile', 'report', 'browse', 'report-detail'
   const [prefilledLoginEmail, setPrefilledLoginEmail] = useState('')
   const [authUser, setAuthUser] = useState(null)
+  const [selectedReportId, setSelectedReportId] = useState(null)
 
   useEffect(() => {
     const restoreSession = async () => {
@@ -84,6 +86,16 @@ function App() {
     setCurrentPage('browse')
   }
 
+  const handleViewReport = (reportId, itemType) => {
+    setSelectedReportId(reportId)
+    setCurrentPage('report-detail')
+  }
+
+  const handleBackFromReportDetail = () => {
+    setCurrentPage('browse')
+    setSelectedReportId(null)
+  }
+
   const handleSignOut = () => {
     localStorage.removeItem('accessToken')
     setAuthUser(null)
@@ -131,6 +143,14 @@ function App() {
         onBrowse={handleBrowseClick}
         onReportItem={handleReportItemClick}
         onAvatarClick={handleAvatarClick}
+        onViewReport={handleViewReport}
+      />
+    ) : currentPage === 'report-detail' ? (
+      <ReportDetailPage
+        authUser={authUser}
+        onHome={handleHomeClick}
+        onBack={handleBackFromReportDetail}
+        reportId={selectedReportId}
       />
     ) : (
       <HomePage
