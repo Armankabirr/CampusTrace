@@ -773,19 +773,42 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                       </div>
 
                       {claim.status === 'pending' && (
-                        <div className="flex flex-wrap gap-3">
-                          <button
-                            type="button"
-                            className="flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
-                          >
-                            Accept Claim
-                          </button>
-                          <button
-                            type="button"
-                            className="flex-1 rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-                          >
-                            Reject Claim
-                          </button>
+                        <div className="space-y-3">
+                          <div className="rounded-2xl bg-white p-4 shadow-sm">
+                            <p className="text-xs font-semibold text-slate-600 mb-3">VERIFICATION — answers provided by claimer</p>
+                            <div className="space-y-2">
+                              {claim.reportInfo?.itemType === 'found' && claim.reportInfo?.verificationDetails?.proofQuestions?.length > 0 ? (
+                                claim.reportInfo.verificationDetails.proofQuestions.map((q, idx) => (
+                                  <div key={idx} className="rounded-md border border-slate-100 bg-slate-50 p-3">
+                                    <p className="text-[13px] font-semibold text-slate-700">Q: {q.question}</p>
+                                    <p className="mt-1 text-sm text-slate-600">A: {claim.answersProvided && claim.answersProvided[idx] ? claim.answersProvided[idx] : 'No answer provided'}</p>
+                                  </div>
+                                ))
+                              ) : claim.reportInfo?.itemType === 'lost' ? (
+                                <div className="rounded-md border border-slate-100 bg-slate-50 p-3">
+                                  <p className="text-[13px] font-semibold text-slate-700">Secret identifier provided</p>
+                                  <p className="mt-1 text-sm text-slate-600">{claim.secretIdentifierProvided || 'N/A'}</p>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-slate-500">No verification details available.</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-3">
+                            <button
+                              type="button"
+                              className="flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
+                            >
+                              Accept Claim
+                            </button>
+                            <button
+                              type="button"
+                              className="flex-1 rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                            >
+                              Reject Claim
+                            </button>
+                          </div>
                         </div>
                       )}
                     </article>
