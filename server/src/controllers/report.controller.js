@@ -22,7 +22,7 @@ export const createReport = async (req, res) => {
       }
     }
 
-    // Validate required fields
+    // Validate required public fields
     if (!itemType || !category || !normalizedTitle || !normalizedDescription || !normalizedLastSeenLocation) {
       return res.status(400).json({ message: 'All required fields must be provided.' });
     }
@@ -39,8 +39,48 @@ export const createReport = async (req, res) => {
       return res.status(400).json({ message: 'Contact information is required.' });
     }
 
-    if (!verificationDetails || !verificationDetails.privateIdentifier || !verificationDetails.proofQuestion || !verificationDetails.proofAnswer) {
-      return res.status(400).json({ message: 'Verification details are required.' });
+    const normalizedVerificationDetails = {
+      privateIdentifier: '',
+      proofQuestions: [],
+    };
+
+    if (itemType === 'lost') {
+      if (!verificationDetails || !verificationDetails.privateIdentifier) {
+        return res.status(400).json({ message: 'Secret identifier is required for lost item reports.' });
+      }
+
+      normalizedVerificationDetails.privateIdentifier = String(verificationDetails.privateIdentifier).trim();
+    }
+
+    if (itemType === 'found') {
+      const incomingQuestions = Array.isArray(verificationDetails?.proofQuestions)
+        ? verificationDetails.proofQuestions
+        : [];
+      const legacyQuestion = verificationDetails?.proofQuestion;
+      const legacyAnswer = verificationDetails?.proofAnswer;
+      const sourceQuestions =
+        incomingQuestions.length > 0
+          ? incomingQuestions
+          : legacyQuestion || legacyAnswer
+            ? [{ question: legacyQuestion, answer: legacyAnswer }]
+            : [];
+
+      const normalizedQuestions = sourceQuestions
+        .map((item) => ({
+          question: String(item?.question || '').trim(),
+          answer: String(item?.answer || '').trim().toLowerCase(),
+        }))
+        .filter((item) => item.question && item.answer);
+
+      if (!normalizedQuestions.length) {
+        return res.status(400).json({ message: 'At least one verification question and expected answer are required for found item reports.' });
+      }
+
+      normalizedVerificationDetails.proofQuestions = normalizedQuestions;
+    }
+
+    if (!['lost', 'found'].includes(itemType)) {
+      return res.status(400).json({ message: 'Invalid item type.' });
     }
 
     let imageUrl = null;
@@ -72,11 +112,7 @@ export const createReport = async (req, res) => {
       contactName: normalizedContactName,
       contactEmail: normalizedContactEmail,
       contactPhone: normalizedContactPhone,
-      verificationDetails: {
-        privateIdentifier: String(verificationDetails.privateIdentifier).trim(),
-        proofQuestion: String(verificationDetails.proofQuestion).trim(),
-        proofAnswer: String(verificationDetails.proofAnswer).trim(),
-      },
+      verificationDetails: normalizedVerificationDetails,
     });
 
     return res.status(201).json({

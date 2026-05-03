@@ -23,9 +23,11 @@ const initialFormState = {
 
 const initialSecretState = {
   privateIdentifier: '',
-  proofQuestion: '',
-  proofAnswer: '',
 }
+
+const initialFoundVerificationState = [
+  { question: '', answer: '' },
+]
 
 function formatDate(value) {
   if (!value) return 'Today'
@@ -44,6 +46,7 @@ function ReportItemPage({ authUser, onHome, onBack }) {
     contactPhone: authUser?.phone || '',
   })
   const [secretData, setSecretData] = useState(initialSecretState)
+  const [foundVerificationData, setFoundVerificationData] = useState(initialFoundVerificationState)
   const [imageName, setImageName] = useState('')
   const [selectedImageFile, setSelectedImageFile] = useState(null)
   const [submissionError, setSubmissionError] = useState('')
@@ -61,6 +64,13 @@ function ReportItemPage({ authUser, onHome, onBack }) {
     setFormData((current) => ({ ...current, [name]: value }))
   }
 
+  const handleItemTypeChange = (itemType) => {
+    setFormData((current) => ({ ...current, itemType }))
+    setSecretData(initialSecretState)
+    setFoundVerificationData(initialFoundVerificationState)
+    setSubmissionError('')
+  }
+
   const handleImageChange = (event) => {
     const file = event.target.files?.[0]
     setImageName(file ? file.name : '')
@@ -70,6 +80,22 @@ function ReportItemPage({ authUser, onHome, onBack }) {
   const handleSecretChange = (event) => {
     const { name, value } = event.target
     setSecretData((current) => ({ ...current, [name]: value }))
+  }
+
+  const handleFoundVerificationChange = (index, field, value) => {
+    setFoundVerificationData((current) =>
+      current.map((item, currentIndex) =>
+        currentIndex === index ? { ...item, [field]: value } : item,
+      ),
+    )
+  }
+
+  const addFoundVerificationItem = () => {
+    setFoundVerificationData((current) => [...current, { question: '', answer: '' }])
+  }
+
+  const removeFoundVerificationItem = (index) => {
+    setFoundVerificationData((current) => current.filter((_, currentIndex) => currentIndex !== index))
   }
 
   const validatePublicDetails = () => {
@@ -119,8 +145,15 @@ function ReportItemPage({ authUser, onHome, onBack }) {
       return
     }
 
-    if (!secretData.privateIdentifier.trim() || !secretData.proofQuestion.trim() || !secretData.proofAnswer.trim()) {
-      setSubmissionError('Please provide all secret ownership details before posting the report.')
+    if (
+      (formData.itemType === 'lost' && !secretData.privateIdentifier.trim()) ||
+      (formData.itemType === 'found' && !foundVerificationData.some((item) => item.question.trim() && item.answer.trim()))
+    ) {
+      setSubmissionError(
+        formData.itemType === 'lost'
+          ? 'Please provide a secret identifier before posting the lost item report.'
+          : 'Please provide at least one verification question and expected answer before posting the found item report.'
+      )
       setSubmissionSuccess('')
       setIsLoading(false)
       return
@@ -140,7 +173,14 @@ function ReportItemPage({ authUser, onHome, onBack }) {
       formDataToSend.append('contactName', formData.contactName)
       formDataToSend.append('contactEmail', formData.contactEmail)
       formDataToSend.append('contactPhone', formData.contactPhone)
-      formDataToSend.append('verificationDetails', JSON.stringify(secretData))
+      const verificationDetails =
+        formData.itemType === 'lost'
+          ? { privateIdentifier: secretData.privateIdentifier }
+          : {
+              proofQuestions: foundVerificationData,
+            }
+
+      formDataToSend.append('verificationDetails', JSON.stringify(verificationDetails))
 
       // Add image file if selected
       if (selectedImageFile) {
@@ -183,7 +223,7 @@ function ReportItemPage({ authUser, onHome, onBack }) {
         ...formData,
         imageName,
         imageUrl: data.report.imageUrl,
-        verificationDetails: { ...secretData },
+        verificationDetails,
         createdAt: new Date().toISOString(),
       }
       setRecentPosts((current) => [entry, ...current].slice(0, 4))
@@ -287,7 +327,7 @@ function ReportItemPage({ authUser, onHome, onBack }) {
                             <button
                               key={item.value}
                               type="button"
-                              onClick={() => setFormData((current) => ({ ...current, itemType: item.value }))}
+                              onClick={() => handleItemTypeChange(item.value)}
                               className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
                                 formData.itemType === item.value
                                   ? 'border-brand-300 bg-brand-50 text-brand-700'
@@ -450,52 +490,91 @@ function ReportItemPage({ authUser, onHome, onBack }) {
                     </>
                   ) : (
                     <>
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                        Add private verification details that only the real owner can answer correctly.
-                      </div>
+                      {formData.itemType === 'lost' ? (
+                        <>
+                          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                            For lost item reports, add one secret identifier that only the real owner would know.
+                          </div>
 
-                      <div>
-                        <label htmlFor="privateIdentifier" className="block text-sm font-medium text-slate-700">
-                          Secret Identifier
-                        </label>
-                        <input
-                          id="privateIdentifier"
-                          name="privateIdentifier"
-                          value={secretData.privateIdentifier}
-                          onChange={handleSecretChange}
-                          placeholder="e.g. Last 4 digits, engraving text, hidden sticker, initials"
-                          className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                        />
-                      </div>
+                          <div>
+                            <label htmlFor="privateIdentifier" className="block text-sm font-medium text-slate-700">
+                              Secret Identifier
+                            </label>
+                            <input
+                              id="privateIdentifier"
+                              name="privateIdentifier"
+                              value={secretData.privateIdentifier}
+                              onChange={handleSecretChange}
+                              placeholder="e.g. Last 4 digits, engraving text, hidden sticker, initials"
+                              className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                            For found item reports, add one or more verification questions and expected answers.
+                          </div>
 
-                      <div>
-                        <label htmlFor="proofQuestion" className="block text-sm font-medium text-slate-700">
-                          Verification Question
-                        </label>
-                        <input
-                          id="proofQuestion"
-                          name="proofQuestion"
-                          value={secretData.proofQuestion}
-                          onChange={handleSecretChange}
-                          placeholder="e.g. What photo is inside the wallet?"
-                          className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                        />
-                      </div>
+                          <div className="space-y-4">
+                            {foundVerificationData.map((item, index) => (
+                              <div key={index} className="rounded-2xl border border-slate-200 p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="text-sm font-semibold text-slate-700">Question {index + 1}</p>
+                                  {foundVerificationData.length > 1 ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeFoundVerificationItem(index)}
+                                      className="text-xs font-semibold text-red-600 hover:text-red-700"
+                                    >
+                                      Remove
+                                    </button>
+                                  ) : null}
+                                </div>
 
-                      <div>
-                        <label htmlFor="proofAnswer" className="block text-sm font-medium text-slate-700">
-                          Expected Answer
-                        </label>
-                        <textarea
-                          id="proofAnswer"
-                          name="proofAnswer"
-                          value={secretData.proofAnswer}
-                          onChange={handleSecretChange}
-                          rows={3}
-                          placeholder="Write the exact answer you expect from the claimant."
-                          className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                        />
-                      </div>
+                                <div className="mt-3 space-y-3">
+                                  <div>
+                                    <label htmlFor={`question-${index}`} className="block text-sm font-medium text-slate-700">
+                                      Verification Question
+                                    </label>
+                                    <input
+                                      id={`question-${index}`}
+                                      name="question"
+                                      value={item.question}
+                                      onChange={(event) => handleFoundVerificationChange(index, 'question', event.target.value)}
+                                      placeholder="e.g. What is inside the main pocket?"
+                                      className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <label htmlFor={`answer-${index}`} className="block text-sm font-medium text-slate-700">
+                                      Expected Answer
+                                    </label>
+                                    <textarea
+                                      id={`answer-${index}`}
+                                      name="answer"
+                                      value={item.answer}
+                                      onChange={(event) => handleFoundVerificationChange(index, 'answer', event.target.value)}
+                                      rows={3}
+                                      placeholder="Write the exact answer you expect from the claimant."
+                                      className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+
+                            <button
+                              type="button"
+                              onClick={addFoundVerificationItem}
+                              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                            >
+                              Add another question
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </>
                   )}
 

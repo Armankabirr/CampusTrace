@@ -1,5 +1,22 @@
 import mongoose from 'mongoose';
 
+// Sub-schema for proof questions (only used for found items)
+const proofQuestionSchema = new mongoose.Schema(
+  {
+    question: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    answer: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+  },
+  { _id: false }
+);
+
 const reportSchema = new mongoose.Schema(
   {
     userId: {
@@ -67,15 +84,11 @@ const reportSchema = new mongoose.Schema(
     verificationDetails: {
       privateIdentifier: {
         type: String,
-        required: true,
+        default: '',
       },
-      proofQuestion: {
-        type: String,
-        required: true,
-      },
-      proofAnswer: {
-        type: String,
-        required: true,
+      proofQuestions: {
+        type: [proofQuestionSchema],
+        default: [],
       },
     },
     status: {
