@@ -14,6 +14,7 @@ function App() {
   const [prefilledLoginEmail, setPrefilledLoginEmail] = useState('')
   const [authUser, setAuthUser] = useState(null)
   const [selectedReportId, setSelectedReportId] = useState(null)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
 
   useEffect(() => {
     const restoreSession = async () => {
@@ -46,6 +47,39 @@ function App() {
     restoreSession()
   }, [])
 
+  // Fetch unread notifications count
+  useEffect(() => {
+    if (!authUser) {
+      setUnreadNotifications(0)
+      return
+    }
+
+    const fetchUnreadCount = async () => {
+      try {
+        const token = localStorage.getItem('accessToken')
+        const response = await fetch('/api/notifications/unread-count', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setUnreadNotifications(data.unreadCount || 0)
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error)
+      }
+    }
+
+    fetchUnreadCount()
+
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000)
+    return () => clearInterval(interval)
+  }, [authUser])
+
   const handleLoginClick = () => {
     setCurrentPage('login')
   }
@@ -71,6 +105,13 @@ function App() {
   const handleAvatarClick = () => {
     if (authUser) {
       setCurrentPage('profile')
+    }
+  }
+
+  const handleNotificationClick = () => {
+    if (authUser) {
+      setCurrentPage('profile')
+      // In ProfilePage, we'll default to the first tab or add a notifications tab
     }
   }
 
@@ -133,9 +174,17 @@ function App() {
         onReportItem={handleReportItemClick}
         onSignOut={handleSignOut}
         onAvatarClick={handleAvatarClick}
+        unreadNotifications={unreadNotifications}
+        onNotificationClick={handleNotificationClick}
       />
     ) : currentPage === 'report' ? (
-      <ReportItemPage authUser={authUser} onHome={handleHomeClick} onBack={handleHomeClick} />
+      <ReportItemPage 
+        authUser={authUser} 
+        onHome={handleHomeClick} 
+        onBack={handleHomeClick}
+        unreadNotifications={unreadNotifications}
+        onNotificationClick={handleNotificationClick}
+      />
     ) : currentPage === 'browse' ? (
       <BrowsePage
         authUser={authUser}
@@ -144,6 +193,8 @@ function App() {
         onReportItem={handleReportItemClick}
         onAvatarClick={handleAvatarClick}
         onViewReport={handleViewReport}
+        unreadNotifications={unreadNotifications}
+        onNotificationClick={handleNotificationClick}
       />
     ) : currentPage === 'report-detail' ? (
       <ReportDetailPage
@@ -151,6 +202,8 @@ function App() {
         onHome={handleHomeClick}
         onBack={handleBackFromReportDetail}
         reportId={selectedReportId}
+        unreadNotifications={unreadNotifications}
+        onNotificationClick={handleNotificationClick}
       />
     ) : (
       <HomePage
@@ -161,6 +214,8 @@ function App() {
         onAvatarClick={handleAvatarClick}
         onHome={handleHomeClick}
         authUser={authUser}
+        unreadNotifications={unreadNotifications}
+        onNotificationClick={handleNotificationClick}
       />
     )
 

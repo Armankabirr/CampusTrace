@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 
-function ReportDetailPage({ authUser, onHome, onBack, reportId }) {
+function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotifications, onNotificationClick }) {
   const [report, setReport] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -169,7 +169,13 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId }) {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sora">
-      <Navbar authUser={authUser} activePage="browse" onHome={onHome} />
+      <Navbar 
+        authUser={authUser} 
+        activePage="browse" 
+        onHome={onHome}
+        unreadNotifications={unreadNotifications}
+        onNotificationClick={onNotificationClick}
+      />
 
       <main className="pt-24 pb-12 px-4">
         <div className="mx-auto max-w-4xl">

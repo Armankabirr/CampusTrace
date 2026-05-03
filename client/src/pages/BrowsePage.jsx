@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 
-function BrowsePage({ authUser, onHome, onBrowse, onReportItem, onAvatarClick, onViewReport }) {
+function BrowsePage({ authUser, onHome, onBrowse, onReportItem, onAvatarClick, onViewReport, unreadNotifications, onNotificationClick }) {
   const [reports, setReports] = useState([])
   const [filteredReports, setFilteredReports] = useState([])
   const [loading, setLoading] = useState(true)
@@ -99,6 +99,8 @@ function BrowsePage({ authUser, onHome, onBrowse, onReportItem, onAvatarClick, o
         onSignup={onHome}
         onAvatarClick={onAvatarClick}
         onReportItem={onReportItem}
+        unreadNotifications={unreadNotifications}
+        onNotificationClick={onNotificationClick}
       />
 
       <main className="pt-28 pb-16 px-4">

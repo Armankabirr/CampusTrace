@@ -42,7 +42,7 @@ const reasons = [
   'Real-time Notifications',
 ]
 
-function HomePage({ onLogin, onSignup, onReportItem, onAvatarClick, authUser, onHome, onBrowse }) {
+function HomePage({ onLogin, onSignup, onReportItem, onAvatarClick, authUser, onHome, onBrowse, unreadNotifications, onNotificationClick }) {
   const [parallaxY, setParallaxY] = useState(0)
 
   useEffect(() => {
@@ -82,6 +82,8 @@ function HomePage({ onLogin, onSignup, onReportItem, onAvatarClick, authUser, on
         onSignup={onSignup}
         onAvatarClick={onAvatarClick}
         onReportItem={onReportItem}
+        unreadNotifications={unreadNotifications}
+        onNotificationClick={onNotificationClick}
       />
 
       <main>

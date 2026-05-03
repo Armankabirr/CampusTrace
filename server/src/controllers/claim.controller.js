@@ -1,5 +1,6 @@
 import Claim from '../models/claim.model.js';
 import Report from '../models/report.model.js';
+import Notification from '../models/notification.model.js';
 
 export const createClaim = async (req, res) => {
   try {
@@ -62,9 +63,21 @@ export const createClaim = async (req, res) => {
           : 'The secret identifier does not match. Please check and try again.',
       });
 
+      // Create notification for report owner if identifier matches (lost item found!)
+      if (isVerified) {
+        await Notification.create({
+          userId: report.userId._id,
+          type: 'claim_received',
+          claimId: claim._id,
+          reportId,
+          message: `${req.user.name} found your lost item "${report.title}"! They provided the correct identifier. You can now contact them to retrieve your item.`,
+          relatedUserId: userId,
+        });
+      }
+
       return res.status(201).json({
         message: isVerified
-          ? 'Claim verified successfully!'
+          ? 'Claim verified successfully! Item owner has been notified.'
           : 'The provided identifier does not match.',
         claim,
       });
@@ -94,7 +107,7 @@ export const createClaim = async (req, res) => {
         }
       }
 
-      // Create claim
+      // Create claim with pending status - reporter will manually verify
       const claim = await Claim.create({
         reportId,
         claimerId: userId,
@@ -102,17 +115,25 @@ export const createClaim = async (req, res) => {
         claimerPhone: req.user.phone,
         claimerName: req.user.name,
         answersProvided,
-        isVerified: allCorrect,
-        status: allCorrect ? 'verified' : 'rejected',
+        isVerified: allCorrect, // This tracks if answers are correct, but reporter makes final decision
+        status: 'pending', // Always pending initially for found items - reporter manually verifies
         verificationMessage: allCorrect
-          ? 'Your answers are correct! Item owner has been notified.'
-          : 'One or more answers are incorrect. Please check and try again.',
+          ? 'Your answers are correct! Item owner has been notified to verify.'
+          : 'Some answers may be incorrect. Item owner will review your claim.',
+      });
+
+      // Create notification for report owner (found item claim)
+      await Notification.create({
+        userId: report.userId._id,
+        type: 'claim_pending_approval',
+        claimId: claim._id,
+        reportId,
+        message: `${req.user.name} has claimed your found item "${report.title}". ${allCorrect ? 'Their answers to your verification questions are correct.' : 'Their answers may not match your verification answers.'} Please review the claim.`,
+        relatedUserId: userId,
       });
 
       return res.status(201).json({
-        message: allCorrect
-          ? 'Claim verified successfully!'
-          : 'One or more verification answers are incorrect.',
+        message: 'Claim created successfully! The item owner has been notified and will review your claim.',
         claim,
       });
     }
@@ -175,7 +196,7 @@ export const verifyClaim = async (req, res) => {
     const userId = req.user._id;
 
     // Find the claim
-    const claim = await Claim.findById(claimId).populate('reportId');
+    const claim = await Claim.findById(claimId).populate('reportId').populate('claimerId', 'name email phone');
     if (!claim) {
       return res.status(404).json({ message: 'Claim not found.' });
     }
@@ -192,6 +213,21 @@ export const verifyClaim = async (req, res) => {
     claim.notes = notes || null;
 
     await claim.save();
+
+    // Create notification for claimer
+    const notificationType = approved ? 'claim_accepted' : 'claim_rejected';
+    const message = approved
+      ? `Your claim for "${claim.reportId.title}" has been accepted! You can now contact the person who found your item.`
+      : `Your claim for "${claim.reportId.title}" has been rejected. ${notes ? `Reason: ${notes}` : ''}`;
+
+    await Notification.create({
+      userId: claim.claimerId,
+      type: notificationType,
+      claimId: claim._id,
+      reportId: claim.reportId._id,
+      message,
+      relatedUserId: userId,
+    });
 
     // If approved, update report status
     if (approved) {
@@ -228,5 +264,81 @@ export const getClaimById = async (req, res) => {
   } catch (error) {
     console.error('Error fetching claim:', error);
     return res.status(500).json({ message: 'Failed to fetch claim.' });
+  }
+};
+
+// Get claimer contact info - reporter can view when claim is pending/verified
+export const getClaimerContactInfo = async (req, res) => {
+  try {
+    const { claimId } = req.params;
+    const userId = req.user._id;
+
+    const claim = await Claim.findById(claimId)
+      .populate('reportId')
+      .populate('claimerId', 'name email phone');
+
+    if (!claim) {
+      return res.status(404).json({ message: 'Claim not found.' });
+    }
+
+    // Verify that user owns the report
+    if (claim.reportId.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'You do not have permission to view this contact information.' });
+    }
+
+    // Only allow viewing contact if claim is pending or verified (not completed or rejected)
+    if (!['pending', 'verified'].includes(claim.status)) {
+      return res.status(400).json({ message: 'Contact information is not available for this claim status.' });
+    }
+
+    return res.status(200).json({
+      claimerName: claim.claimerId.name,
+      claimerEmail: claim.claimerId.email,
+      claimerPhone: claim.claimerId.phone,
+      claimStatus: claim.status,
+    });
+  } catch (error) {
+    console.error('Error fetching claimer contact info:', error);
+    return res.status(500).json({ message: 'Failed to fetch contact information.' });
+  }
+};
+
+// Get reporter contact info - claimer can view when claim is completed (accepted)
+export const getReporterContactInfo = async (req, res) => {
+  try {
+    const { claimId } = req.params;
+    const userId = req.user._id;
+
+    const claim = await Claim.findById(claimId)
+      .populate({
+        path: 'reportId',
+        populate: { path: 'userId', select: 'name email phone' }
+      });
+
+    if (!claim) {
+      return res.status(404).json({ message: 'Claim not found.' });
+    }
+
+    // Verify that user is the claimer
+    if (claim.claimerId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'You do not have permission to view this contact information.' });
+    }
+
+    // Only allow viewing contact if claim is completed (accepted)
+    if (claim.status !== 'completed') {
+      return res.status(400).json({ message: 'Contact information is only available after your claim is accepted.' });
+    }
+
+    const reporter = claim.reportId.userId;
+    return res.status(200).json({
+      reporterName: reporter.name,
+      reporterEmail: reporter.email,
+      reporterPhone: reporter.phone,
+      itemTitle: claim.reportId.title,
+      claimStatus: claim.status,
+    });
+  } catch (error) {
+    console.error('Error fetching reporter contact info:', error);
+    return res.status(500).json({ message: 'Failed to fetch contact information.' });
   }
 };

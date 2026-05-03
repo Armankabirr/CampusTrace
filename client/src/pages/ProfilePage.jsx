@@ -9,7 +9,7 @@ const profileMetrics = [
   { value: '2', label: 'Pending Claims', tone: 'bg-amber-500' },
 ]
 
-const activityTabs = ['Recent Activity', 'My Claims', 'Account Settings']
+const activityTabs = ['Recent Activity', 'My Claims', 'Claims on My Items', 'Account Settings']
 
 // Department codes mapping
 const departmentCodes = {
@@ -56,16 +56,19 @@ function formatActivityDate(dateValue) {
   })
 }
 
-function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick }) {
+function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick, unreadNotifications, onNotificationClick }) {
   const [userData, setUserData] = useState(null)
   const [userReports, setUserReports] = useState([])
   const [userClaims, setUserClaims] = useState([])
+  const [claimsOnMyItems, setClaimsOnMyItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reportsLoading, setReportsLoading] = useState(true)
   const [reportsError, setReportsError] = useState(null)
   const [claimsLoading, setClaimsLoading] = useState(true)
   const [claimsError, setClaimsError] = useState(null)
+  const [claimsOnMyItemsLoading, setClaimsOnMyItemsLoading] = useState(true)
+  const [claimsOnMyItemsError, setClaimsOnMyItemsError] = useState(null)
   const [activeTab, setActiveTab] = useState('Recent Activity')
   const [isEditMode, setIsEditMode] = useState(false)
   const [editFormData, setEditFormData] = useState({
@@ -191,6 +194,72 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick 
     fetchUserClaims()
   }, [])
 
+  useEffect(() => {
+    const fetchClaimsOnMyItems = async () => {
+      try {
+        setClaimsOnMyItemsLoading(true)
+        const token = localStorage.getItem('accessToken')
+
+        if (!token) {
+          setClaimsOnMyItemsError('No access token found')
+          setClaimsOnMyItemsLoading(false)
+          return
+        }
+
+        // Fetch all my reports
+        const reportsResponse = await fetch('/api/reports/my-reports', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!reportsResponse.ok) {
+          throw new Error('Failed to fetch your reports')
+        }
+
+        const reportsData = await reportsResponse.json()
+        const myReports = reportsData.reports || []
+
+        // Fetch claims for each report
+        const allClaims = []
+        for (const report of myReports) {
+          try {
+            const claimsResponse = await fetch(`/api/claims/by-report/${report._id}`, {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            })
+
+            if (claimsResponse.ok) {
+              const claimsData = await claimsResponse.json()
+              const claimsWithReportInfo = (claimsData.claims || []).map((claim) => ({
+                ...claim,
+                reportInfo: report,
+              }))
+              allClaims.push(...claimsWithReportInfo)
+            }
+          } catch (err) {
+            console.error(`Error fetching claims for report ${report._id}:`, err)
+          }
+        }
+
+        setClaimsOnMyItems(allClaims)
+        setClaimsOnMyItemsError(null)
+      } catch (err) {
+        console.error('Error fetching claims on my items:', err)
+        setClaimsOnMyItemsError(err.message)
+      } finally {
+        setClaimsOnMyItemsLoading(false)
+      }
+    }
+
+    fetchClaimsOnMyItems()
+  }, [])
+
   const handleOpenEdit = () => {
     const currentUser = displayUser
     setEditFormData({
@@ -307,6 +376,8 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick 
           onMatches={onHome}
           onAvatarClick={onAvatarClick}
           onReportItem={onReportItem || onHome}
+          unreadNotifications={unreadNotifications}
+          onNotificationClick={onNotificationClick}
         />
         <main className="pt-24">
           <div className="flex items-center justify-center py-20">
@@ -330,6 +401,8 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick 
         onMatches={onHome}
         onAvatarClick={onAvatarClick}
         onReportItem={onReportItem || onHome}
+        unreadNotifications={unreadNotifications}
+        onNotificationClick={onNotificationClick}
       />
 
       <main className="pt-24">
@@ -602,6 +675,119 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick 
                       <span className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold ${getClaimBadgeTone(claim.status)}`}>
                         Status: {formatClaimStatus(claim.status)}
                       </span>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'Claims on My Items' && (
+            <div className="mx-auto mt-6 max-w-6xl rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-slate-900">Claims on My Items</h2>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                  {claimsOnMyItems.length} Claims
+                </span>
+              </div>
+
+              {claimsOnMyItemsLoading && <p className="text-sm text-slate-500">Loading claims...</p>}
+
+              {!claimsOnMyItemsLoading && claimsOnMyItemsError && (
+                <p className="text-sm font-medium text-red-600">Error loading claims: {claimsOnMyItemsError}</p>
+              )}
+
+              {!claimsOnMyItemsLoading && !claimsOnMyItemsError && claimsOnMyItems.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                  <p className="text-sm text-slate-600">No one has claimed your items yet.</p>
+                </div>
+              )}
+
+              {!claimsOnMyItemsLoading && !claimsOnMyItemsError && claimsOnMyItems.length > 0 && (
+                <div className="space-y-3">
+                  {claimsOnMyItems.map((claim) => (
+                    <article
+                      key={claim._id}
+                      className="flex flex-col gap-4 rounded-2xl border border-slate-200 p-4 sm:p-5"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                          {claim.reportInfo?.imageUrl ? (
+                            <img
+                              src={claim.reportInfo.imageUrl}
+                              alt={claim.reportInfo?.title || 'Item image'}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-xl text-slate-400">
+                              📦
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                                claim.reportInfo?.itemType?.toLowerCase() === 'lost'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-emerald-100 text-emerald-700'
+                              }`}
+                            >
+                              {claim.reportInfo?.itemType || 'Unknown'}
+                            </span>
+                            <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${getClaimBadgeTone(claim.status)}`}>
+                              {formatClaimStatus(claim.status)}
+                            </span>
+                            <span className="text-xs text-slate-500">{formatActivityDate(claim.createdAt)}</span>
+                          </div>
+                          <p className="mt-2 text-sm font-semibold text-slate-900">{claim.reportInfo?.title || 'Claimed item'}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {claim.reportInfo?.category || 'Uncategorized'} • {claim.reportInfo?.lastSeenLocation || 'Unknown location'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl bg-slate-50 p-4">
+                        <p className="text-xs font-semibold text-slate-600 mb-3">CLAIMER INFORMATION</p>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <div>
+                            <p className="text-xs text-slate-500">Name</p>
+                            <p className="text-sm font-medium text-slate-900">{claim.claimerName || 'Unknown'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500">Email</p>
+                            <p className="text-sm font-medium text-slate-900 break-all">{claim.claimerEmail || 'Not provided'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500">Phone</p>
+                            <p className="text-sm font-medium text-slate-900">{claim.claimerPhone || 'Not provided'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500">Answers Provided</p>
+                            <p className="text-sm font-medium text-slate-900">
+                              {claim.answersProvided?.length > 0 ? `${claim.answersProvided.length} answers` : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {claim.status === 'pending' && (
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            className="flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
+                          >
+                            Accept Claim
+                          </button>
+                          <button
+                            type="button"
+                            className="flex-1 rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                          >
+                            Reject Claim
+                          </button>
+                        </div>
+                      )}
                     </article>
                   ))}
                 </div>
