@@ -84,47 +84,31 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotificati
         throw new Error('Please sign in to verify this item')
       }
 
-      const useMultipart = isLostItem
-      const claimPayload = useMultipart ? new FormData() : { reportId }
+      const claimPayload = new FormData()
+      claimPayload.append('reportId', reportId)
 
-      if (useMultipart) {
-        claimPayload.append('reportId', reportId)
+      if (isLostItem) {
         claimPayload.append('secretIdentifierProvided', claimData.secretIdentifier || '')
-        claimPayload.append('description', claimData.description || '')
-
-        if (claimPhoto) {
-          claimPayload.append('photo', claimPhoto)
-        }
-      }
-
-      if (report.itemType?.toLowerCase() === 'found') {
+      } else {
         const answers = []
         report.verificationDetails.proofQuestions.forEach((_, idx) => {
           answers.push(claimData[`answer${idx}`])
         })
-        claimPayload.answersProvided = answers
-      } else if (!useMultipart) {
-        claimPayload.secretIdentifierProvided = claimData.secretIdentifier
+        claimPayload.append('answersProvided', JSON.stringify(answers))
       }
 
-      const requestInit = useMultipart
-        ? {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: claimPayload,
-          }
-        : {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify(claimPayload),
-          }
+      claimPayload.append('description', claimData.description || '')
+
+      if (claimPhoto) {
+        claimPayload.append('photo', claimPhoto)
+      }
 
       const response = await fetch('/api/claims/create', {
         method: 'POST',
-        ...requestInit,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: claimPayload,
       })
 
       const text = await response.text()
@@ -399,13 +383,44 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotificati
                           ))
                         )}
 
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Optional Description
+                          </label>
+                          <textarea
+                            value={claimData.description || ''}
+                            onChange={(e) => handleClaimChange('description', e.target.value)}
+                            placeholder={
+                              isLostItem
+                                ? 'Share details that help the reporter confirm you found it'
+                                : 'Add any details that help the reporter understand your claim'
+                            }
+                            className="w-full min-h-28 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Optional Photo
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleClaimPhotoChange}
+                            className="w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:font-medium file:text-brand-700 hover:file:bg-brand-100"
+                          />
+                          {claimPhoto && (
+                            <p className="mt-2 text-xs text-slate-500">Selected: {claimPhoto.name}</p>
+                          )}
+                        </div>
+
                         <div className="flex gap-2 pt-2">
                           <button
                             type="submit"
                             disabled={submittingClaim}
                             className="flex-1 py-2 px-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-medium transition disabled:opacity-50"
                           >
-                            {submittingClaim ? 'Submitting...' : isLostItem ? 'Submit Claim' : 'Verify'}
+                            {submittingClaim ? 'Submitting...' : 'Submit Claim'}
                           </button>
                           <button
                             type="button"

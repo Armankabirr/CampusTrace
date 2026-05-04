@@ -5,9 +5,10 @@ import { uploadImageToImageKit } from '../services/imagekit.service.js';
 
 export const createClaim = async (req, res) => {
   try {
-    const { reportId, secretIdentifierProvided, answersProvided, description } = req.body;
+    const { reportId, secretIdentifierProvided, description } = req.body;
     const userId = req.user._id;
     const attachmentFile = req.file;
+    const rawAnswersProvided = req.body.answersProvided;
 
     // Validate reportId
     if (!reportId) {
@@ -95,6 +96,18 @@ export const createClaim = async (req, res) => {
         claim,
       });
     } else if (report.itemType === 'found') {
+      const answersProvided = Array.isArray(rawAnswersProvided)
+        ? rawAnswersProvided
+        : typeof rawAnswersProvided === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(rawAnswersProvided);
+              } catch {
+                return null;
+              }
+            })()
+          : null;
+
       if (!Array.isArray(answersProvided) || answersProvided.length === 0) {
         return res.status(400).json({ message: 'Answers are required.' });
       }
@@ -128,6 +141,9 @@ export const createClaim = async (req, res) => {
         claimerPhone: req.user.phone,
         claimerName: req.user.name,
         answersProvided,
+        foundItemDescription: description ? String(description).trim() : null,
+        foundItemImageUrl: null,
+        foundItemImageFileId: null,
         isVerified: allCorrect, // This tracks if answers are correct, but reporter makes final decision
         status: 'pending', // Always pending initially for found items - reporter manually verifies
         verificationMessage: allCorrect
@@ -135,13 +151,23 @@ export const createClaim = async (req, res) => {
           : 'Some answers may be incorrect. Item owner will review your claim.',
       });
 
+      if (attachmentFile) {
+        const uploadResult = await uploadImageToImageKit(
+          attachmentFile,
+          `claim-found-${reportId}-${Date.now()}`
+        );
+        claim.foundItemImageUrl = uploadResult.url;
+        claim.foundItemImageFileId = uploadResult.fileId;
+        await claim.save();
+      }
+
       // Create notification for report owner (found item claim)
       await Notification.create({
         userId: report.userId._id,
         type: 'claim_pending_approval',
         claimId: claim._id,
         reportId,
-        message: `${req.user.name} has claimed your lost item "${report.title}". ${allCorrect ? 'Their answers to your verification questions are correct.' : 'Their answers may not match your verification answers.'} Please review the claim.`,
+        message: `${req.user.name} has claimed your found item "${report.title}". ${allCorrect ? 'Their answers to your verification questions are correct.' : 'Their answers may not match your verification answers.'} Please review the claim.`,
         relatedUserId: userId,
       });
 

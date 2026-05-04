@@ -1158,6 +1158,25 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                             </p>
                           </div>
                         </div>
+                        {(claim.foundItemDescription || claim.foundItemImageUrl) && (
+                          <div className="mt-4 space-y-3">
+                            {claim.foundItemDescription && (
+                              <div className="rounded-md border border-slate-100 bg-white p-3">
+                                <p className="text-xs font-semibold text-slate-600">Claim Description</p>
+                                <p className="mt-1 text-sm text-slate-700 whitespace-pre-line">{claim.foundItemDescription}</p>
+                              </div>
+                            )}
+                            {claim.foundItemImageUrl && (
+                              <div className="overflow-hidden rounded-md border border-slate-100 bg-white">
+                                <img
+                                  src={claim.foundItemImageUrl}
+                                  alt="Claim evidence"
+                                  className="h-56 w-full object-cover"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {claim.status === 'pending' && (
@@ -1178,19 +1197,56 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                                     <p className="text-[13px] font-semibold text-slate-700">Secret identifier provided</p>
                                     <p className="mt-1 text-sm text-slate-600">{claim.secretIdentifierProvided || 'N/A'}</p>
                                   </div>
-                                  {claim.foundItemDescription && (
-                                    <div className="rounded-md border border-slate-100 bg-slate-50 p-3">
-                                      <p className="text-[13px] font-semibold text-slate-700">Claimer description</p>
-                                      <p className="mt-1 text-sm text-slate-600 whitespace-pre-line">{claim.foundItemDescription}</p>
+                                  {(claim.foundItemDescription || claim.foundItemImageUrl) && (
+                                    <div className="space-y-3">
+                                      {claim.foundItemDescription && (
+                                        <div className="rounded-md border border-slate-100 bg-slate-50 p-3">
+                                          <p className="text-[13px] font-semibold text-slate-700">Claimer description</p>
+                                          <p className="mt-1 text-sm text-slate-600 whitespace-pre-line">{claim.foundItemDescription}</p>
+                                        </div>
+                                      )}
+                                      {claim.foundItemImageUrl && (
+                                        <div className="overflow-hidden rounded-md border border-slate-100 bg-white">
+                                          <img
+                                            src={claim.foundItemImageUrl}
+                                            alt="Evidence uploaded by claimer"
+                                            className="h-56 w-full object-cover"
+                                          />
+                                        </div>
+                                      )}
                                     </div>
                                   )}
-                                  {claim.foundItemImageUrl && (
-                                    <div className="overflow-hidden rounded-md border border-slate-100 bg-white">
-                                      <img
-                                        src={claim.foundItemImageUrl}
-                                        alt="Evidence uploaded by claimer"
-                                        className="h-56 w-full object-cover"
-                                      />
+                                </div>
+                              ) : claim.reportInfo?.itemType === 'found' ? (
+                                <div className="space-y-3">
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    {claim.reportInfo?.verificationDetails?.proofQuestions?.length > 0 &&
+                                      claim.reportInfo.verificationDetails.proofQuestions.map((q, idx) => (
+                                        <div key={idx} className="rounded-md border border-slate-100 bg-slate-50 p-3">
+                                          <p className="text-[13px] font-semibold text-slate-700">Q: {q.question}</p>
+                                          <p className="mt-1 text-sm text-slate-600">
+                                            A: {claim.answersProvided && claim.answersProvided[idx] ? claim.answersProvided[idx] : 'No answer provided'}
+                                          </p>
+                                        </div>
+                                      ))}
+                                  </div>
+                                  {(claim.foundItemDescription || claim.foundItemImageUrl) && (
+                                    <div className="space-y-3">
+                                      {claim.foundItemDescription && (
+                                        <div className="rounded-md border border-slate-100 bg-slate-50 p-3">
+                                          <p className="text-[13px] font-semibold text-slate-700">Claimer description</p>
+                                          <p className="mt-1 text-sm text-slate-600 whitespace-pre-line">{claim.foundItemDescription}</p>
+                                        </div>
+                                      )}
+                                      {claim.foundItemImageUrl && (
+                                        <div className="overflow-hidden rounded-md border border-slate-100 bg-white">
+                                          <img
+                                            src={claim.foundItemImageUrl}
+                                            alt="Evidence uploaded by claimer"
+                                            className="h-56 w-full object-cover"
+                                          />
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
