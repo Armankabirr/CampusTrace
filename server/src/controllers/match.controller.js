@@ -25,18 +25,29 @@ const buildItemResponse = (item, includeContacts = false) => {
   return response;
 };
 
-const buildMatchResponse = (match, includeContacts = false) => ({
-  _id: match._id,
-  lostItem: buildItemResponse(match.lostItemId, includeContacts),
-  foundItem: buildItemResponse(match.foundItemId, includeContacts),
-  matchScore: match.matchScore,
-  matchReasons: match.matchReasons || [],
-  status: match.status,
-  notifiedLostUser: match.notifiedLostUser,
-  notifiedFoundUser: match.notifiedFoundUser,
-  createdAt: match.createdAt,
-  updatedAt: match.updatedAt,
-});
+const buildMatchResponse = (match, includeContacts = false, userId = null) => {
+  const lostItemOwnedByCurrentUser = userId
+    ? match.lostUserId.toString() === userId.toString()
+    : false;
+  const foundItemOwnedByCurrentUser = userId
+    ? match.foundUserId.toString() === userId.toString()
+    : false;
+
+  return {
+    _id: match._id,
+    lostItem: buildItemResponse(match.lostItemId, includeContacts),
+    foundItem: buildItemResponse(match.foundItemId, includeContacts),
+    lostItemOwnedByCurrentUser,
+    foundItemOwnedByCurrentUser,
+    matchScore: match.matchScore,
+    matchReasons: match.matchReasons || [],
+    status: match.status,
+    notifiedLostUser: match.notifiedLostUser,
+    notifiedFoundUser: match.notifiedFoundUser,
+    createdAt: match.createdAt,
+    updatedAt: match.updatedAt,
+  };
+};
 
 const canAccessMatch = (match, userId) =>
   match.lostUserId.toString() === userId.toString() || match.foundUserId.toString() === userId.toString();
@@ -64,7 +75,7 @@ export const getMyMatches = async (req, res) => {
       .populate('foundItemId', 'itemType category title description lastSeenLocation date imageUrl contactName contactEmail contactPhone')
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({ matches: matches.map((match) => buildMatchResponse(match, false)) });
+    return res.status(200).json({ matches: matches.map((match) => buildMatchResponse(match, false, userId)) });
   } catch (error) {
     console.error('Error fetching matches:', error);
     return res.status(500).json({ message: 'Failed to fetch matches.' });
@@ -89,7 +100,7 @@ export const getMatchById = async (req, res) => {
     }
 
     return res.status(200).json({
-      match: buildMatchResponse(match, match.status === 'confirmed'),
+      match: buildMatchResponse(match, match.status === 'confirmed', userId),
     });
   } catch (error) {
     console.error('Error fetching match:', error);
@@ -124,7 +135,7 @@ export const updateMatchStatus = async (req, res) => {
 
     return res.status(200).json({
       message: `Match ${status} successfully.`,
-      match: buildMatchResponse(match, match.status === 'confirmed'),
+      match: buildMatchResponse(match, match.status === 'confirmed', userId),
     });
   } catch (error) {
     console.error('Error updating match:', error);

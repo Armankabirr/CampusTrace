@@ -202,6 +202,17 @@ function App() {
     setCurrentPage('matches')
   }
 
+  const handleStartMatchVerification = (reportId) => {
+    if (!reportId) return
+
+    if (window.location.pathname.startsWith('/matches')) {
+      window.history.pushState({}, '', '/')
+    }
+
+    setSelectedReportId(reportId)
+    setCurrentPage('report-detail')
+  }
+
   const handleNotificationClick = () => {
     // default simple click (no payload) navigates to profile
     if (window.location.pathname.startsWith('/matches')) {
@@ -398,6 +409,7 @@ function App() {
         onNotificationClick={handleNotificationClickPayload}
         onViewMatch={handleViewMatch}
         onBack={handleHomeClick}
+        onStartVerification={handleStartMatchVerification}
         onMatchesUpdated={() => {
           const refreshPendingMatchCount = async () => {
             try {
@@ -434,6 +446,7 @@ function App() {
         matchId={selectedMatchId}
         onViewMatch={handleViewMatch}
         onBack={handleBackFromMatchDetail}
+        onStartVerification={handleStartMatchVerification}
         onMatchesUpdated={() => {
           const refreshPendingMatchCount = async () => {
             try {

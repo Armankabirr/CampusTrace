@@ -99,6 +99,7 @@ function MatchesPage({
   matchId = null,
   onViewMatch,
   onBack,
+  onStartVerification,
   onMatchesUpdated,
 }) {
   const [matches, setMatches] = useState([])
@@ -189,6 +190,32 @@ function MatchesPage({
     } finally {
       setActionLoading(false)
     }
+  }
+
+  const handleStartVerification = () => {
+    if (!match) return
+
+    let targetReportId = null
+
+    if (match.lostItemOwnedByCurrentUser && !match.foundItemOwnedByCurrentUser) {
+      targetReportId = match.foundItem?._id
+    } else if (match.foundItemOwnedByCurrentUser && !match.lostItemOwnedByCurrentUser) {
+      targetReportId = match.lostItem?._id
+    } else if (!match.lostItemOwnedByCurrentUser && !match.foundItemOwnedByCurrentUser) {
+      targetReportId = match.foundItem?._id || match.lostItem?._id
+    }
+
+    if (!targetReportId) {
+      setStatusMessage('Error: Unable to determine which item to verify for this match.')
+      return
+    }
+
+    if (typeof onStartVerification === 'function') {
+      onStartVerification(targetReportId)
+      return
+    }
+
+    setStatusMessage('Error: Verification route is not available right now.')
   }
 
   const renderContacts = (item, title) => {
@@ -330,23 +357,27 @@ function MatchesPage({
                 )}
 
                 {match.status === 'pending' && (
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      disabled={actionLoading}
-                      onClick={() => handleUpdateStatus('confirmed')}
-                      className="rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50"
-                    >
-                      {actionLoading ? 'Updating...' : 'Confirm Match'}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={actionLoading}
-                      onClick={() => handleUpdateStatus('rejected')}
-                      className="rounded-full border border-red-300 px-5 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                    >
-                      {actionLoading ? 'Updating...' : 'Reject Match'}
-                    </button>
+                  <div className="mt-5 space-y-3">
+                    <p className="text-sm text-slate-600">
+                      Complete the same lost/found claim verification flow to proceed with this potential match.
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={handleStartVerification}
+                        className="rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
+                      >
+                        Start Verification Flow
+                      </button>
+                      <button
+                        type="button"
+                        disabled={actionLoading}
+                        onClick={() => handleUpdateStatus('rejected')}
+                        className="rounded-full border border-red-300 px-5 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                      >
+                        {actionLoading ? 'Updating...' : 'Reject Match'}
+                      </button>
+                    </div>
                   </div>
                 )}
 
