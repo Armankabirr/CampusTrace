@@ -370,6 +370,10 @@ export const submitClaimerFeedback = async (req, res) => {
       return res.status(400).json({ message: 'You can review only after claim acceptance.' });
     }
 
+    if (claim.claimerReview?.createdAt) {
+      return res.status(409).json({ message: 'Claimer feedback has already been submitted.' });
+    }
+
     if (typeof returned === 'boolean') {
       claim.claimerConfirmedReturned = returned;
     }
@@ -412,6 +416,10 @@ export const submitReporterFeedback = async (req, res) => {
 
     if (!['completed', 'returned'].includes(claim.status)) {
       return res.status(400).json({ message: 'You can review only after claim acceptance.' });
+    }
+
+    if (claim.reporterReview?.createdAt) {
+      return res.status(409).json({ message: 'Reporter review has already been submitted.' });
     }
 
     if (typeof isRealOwner === 'boolean') {

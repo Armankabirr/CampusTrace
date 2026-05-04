@@ -82,6 +82,9 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
   const [contactLoading, setContactLoading] = useState({})
   const [contactInfo, setContactInfo] = useState({})
   const [claimActionLoading, setClaimActionLoading] = useState({})
+  const [claimRejectReason, setClaimRejectReason] = useState({})
+  const [claimRejectError, setClaimRejectError] = useState({})
+  const [rejectingClaimId, setRejectingClaimId] = useState(null)
   const [claimerFeedbackLoading, setClaimerFeedbackLoading] = useState({})
   const [reporterFeedbackLoading, setReporterFeedbackLoading] = useState({})
   const [claimerFeedbackSuccess, setClaimerFeedbackSuccess] = useState({})
@@ -402,12 +405,7 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
     }
   }
 
-  const handleClaimDecision = async (claimId, approved) => {
-    let notes = null
-    if (!approved) {
-      const reason = window.prompt('Optional: add a rejection reason')
-      notes = reason ? String(reason).trim() : null
-    }
+  const handleClaimDecision = async (claimId, approved, notes = null) => {
 
     try {
       setClaimActionLoading((prev) => ({ ...prev, [claimId]: true }))
@@ -445,6 +443,30 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
     } finally {
       setClaimActionLoading((prev) => ({ ...prev, [claimId]: false }))
     }
+  }
+
+  const startRejectFlow = (claimId) => {
+    setRejectingClaimId(claimId)
+    setClaimRejectReason((prev) => ({ ...prev, [claimId]: '' }))
+    setClaimRejectError((prev) => ({ ...prev, [claimId]: '' }))
+  }
+
+  const cancelRejectFlow = (claimId) => {
+    setRejectingClaimId(null)
+    setClaimRejectReason((prev) => ({ ...prev, [claimId]: '' }))
+    setClaimRejectError((prev) => ({ ...prev, [claimId]: '' }))
+  }
+
+  const submitRejectFlow = async (claimId) => {
+    const reason = (claimRejectReason[claimId] || '').trim()
+
+    if (!reason) {
+      setClaimRejectError((prev) => ({ ...prev, [claimId]: 'Rejection reason is required.' }))
+      return
+    }
+
+    await handleClaimDecision(claimId, false, reason)
+    cancelRejectFlow(claimId)
   }
 
   const handleSubmitClaimerFeedback = async (claimId) => {
@@ -865,6 +887,12 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                           <p className="mt-1 text-xs text-slate-500">
                             {claim.reportId?.category || 'Uncategorized'} • {claim.reportId?.lastSeenLocation || 'Unknown location'}
                           </p>
+                          {claim.status === 'rejected' && claim.notes && (
+                            <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-3">
+                              <p className="text-xs font-semibold text-red-700">Rejection Reason</p>
+                              <p className="mt-1 text-sm text-red-800">{claim.notes}</p>
+                            </div>
+                          )}
                           {['completed', 'returned'].includes(claim.status) && (
                             <div className="mt-3">
                               {contactLoading[claim._id] ? (
@@ -971,19 +999,23 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                               </div>
                               <button
                                 type="button"
-                                disabled={Boolean(claimerFeedbackLoading[claim._id] || claimerFeedbackSuccess[claim._id])}
+                                disabled={Boolean(
+                                  claimerFeedbackLoading[claim._id] ||
+                                    claimerFeedbackSuccess[claim._id] ||
+                                    claim.claimerReview?.createdAt
+                                )}
                                 onClick={() => handleSubmitClaimerFeedback(claim._id)}
                                 className="mt-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 {claimerFeedbackLoading[claim._id]
                                   ? 'Saving...'
-                                  : claimerFeedbackSuccess[claim._id]
+                                  : claim.claimerReview?.createdAt || claimerFeedbackSuccess[claim._id]
                                     ? 'Saved'
                                     : 'Submit Confirmation & Review'}
                               </button>
-                              {claimerFeedbackSuccess[claim._id] && (
+                              {(claimerFeedbackSuccess[claim._id] || claim.claimerReview?.createdAt) && (
                                 <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
-                                  {claimerFeedbackSuccess[claim._id]}
+                                  {claimerFeedbackSuccess[claim._id] || 'Confirmation and review saved successfully.'}
                                 </div>
                               )}
                             </div>
@@ -1152,23 +1184,80 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                           </div>
 
                           <div className="flex flex-wrap gap-3">
-                            <button
-                              type="button"
-                              disabled={Boolean(claimActionLoading[claim._id])}
-                              onClick={() => handleClaimDecision(claim._id, true)}
-                              className="flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
-                            >
-                              {claimActionLoading[claim._id] ? 'Updating...' : 'Accept Claim'}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={Boolean(claimActionLoading[claim._id])}
-                              onClick={() => handleClaimDecision(claim._id, false)}
-                              className="flex-1 rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-                            >
-                              {claimActionLoading[claim._id] ? 'Updating...' : 'Reject Claim'}
-                            </button>
+                            {rejectingClaimId !== claim._id && (
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={Boolean(claimActionLoading[claim._id])}
+                                  onClick={() => handleClaimDecision(claim._id, true)}
+                                  className="flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
+                                >
+                                  {claimActionLoading[claim._id] ? 'Updating...' : 'Accept Claim'}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={Boolean(claimActionLoading[claim._id])}
+                                  onClick={() => startRejectFlow(claim._id)}
+                                  className="flex-1 rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                                >
+                                  {claimActionLoading[claim._id] ? 'Updating...' : 'Reject Claim'}
+                                </button>
+                              </>
+                            )}
                           </div>
+                          {rejectingClaimId === claim._id && (
+                            <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
+                              <div className="mb-3 flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-semibold text-red-700">Reject Claim</p>
+                                  <p className="text-xs text-red-600">Accept is hidden while you enter a reason.</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => cancelRejectFlow(claim._id)}
+                                  className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+
+                              <label htmlFor={`reject-reason-${claim._id}`} className="block text-xs font-semibold text-red-700">
+                                Reason for rejection
+                              </label>
+                              <textarea
+                                id={`reject-reason-${claim._id}`}
+                                value={claimRejectReason[claim._id] || ''}
+                                onChange={(e) => {
+                                  setClaimRejectReason((prev) => ({ ...prev, [claim._id]: e.target.value }))
+                                  setClaimRejectError((prev) => ({ ...prev, [claim._id]: '' }))
+                                }}
+                                placeholder="Enter the reason for rejecting this claim"
+                                autoFocus
+                                className="mt-2 min-h-[110px] w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-red-400"
+                              />
+                              {claimRejectError[claim._id] && (
+                                <p className="mt-2 text-sm text-red-600">{claimRejectError[claim._id]}</p>
+                              )}
+
+                              <div className="mt-4 flex justify-end gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => cancelRejectFlow(claim._id)}
+                                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                                >
+                                  Back
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={Boolean(claimActionLoading[claim._id])}
+                                  onClick={() => submitRejectFlow(claim._id)}
+                                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                                >
+                                  {claimActionLoading[claim._id] ? 'Submitting...' : 'Submit Rejection'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1236,19 +1325,23 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                           </div>
                           <button
                             type="button"
-                            disabled={Boolean(reporterFeedbackLoading[claim._id] || reporterFeedbackSuccess[claim._id])}
+                            disabled={Boolean(
+                              reporterFeedbackLoading[claim._id] ||
+                                reporterFeedbackSuccess[claim._id] ||
+                                claim.reporterReview?.createdAt
+                            )}
                             onClick={() => handleSubmitReporterFeedback(claim._id)}
                             className="mt-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {reporterFeedbackLoading[claim._id]
                               ? 'Saving...'
-                              : reporterFeedbackSuccess[claim._id]
+                              : claim.reporterReview?.createdAt || reporterFeedbackSuccess[claim._id]
                                 ? 'Saved'
                                 : 'Submit Reporter Review'}
                           </button>
-                          {reporterFeedbackSuccess[claim._id] && (
+                          {(reporterFeedbackSuccess[claim._id] || claim.reporterReview?.createdAt) && (
                             <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
-                              {reporterFeedbackSuccess[claim._id]}
+                              {reporterFeedbackSuccess[claim._id] || 'Review saved successfully.'}
                             </div>
                           )}
                         </div>
