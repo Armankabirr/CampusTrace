@@ -214,6 +214,8 @@ function App() {
       <ProfilePage
         authUser={authUser}
         onHome={handleHomeClick}
+        onBrowse={handleBrowseClick}
+        onMatches={handleBrowseClick}
         onReportItem={handleReportItemClick}
         onSignOut={handleSignOut}
         onAvatarClick={handleAvatarClick}
@@ -227,6 +229,9 @@ function App() {
       <ReportItemPage 
         authUser={authUser} 
         onHome={handleHomeClick} 
+        onBrowse={handleBrowseClick}
+        onMatches={handleBrowseClick}
+        onReportItem={handleReportItemClick}
         onBack={handleHomeClick}
         unreadNotifications={unreadNotifications}
         onNotificationClick={handleNotificationClickPayload}
@@ -246,6 +251,9 @@ function App() {
       <ReportDetailPage
         authUser={authUser}
         onHome={handleHomeClick}
+        onBrowse={handleBrowseClick}
+        onMatches={handleBrowseClick}
+        onReportItem={handleReportItemClick}
         onBack={handleBackFromReportDetail}
         reportId={selectedReportId}
         unreadNotifications={unreadNotifications}

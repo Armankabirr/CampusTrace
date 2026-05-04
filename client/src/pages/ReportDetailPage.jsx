@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 
-function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotifications, onNotificationClick }) {
+function ReportDetailPage({ authUser, onHome, onBrowse, onMatches, onReportItem, onBack, reportId, unreadNotifications, onNotificationClick }) {
   const [report, setReport] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -146,7 +146,7 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotificati
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <Navbar authUser={authUser} activePage="browse" onHome={onHome} />
+        <Navbar authUser={authUser} activePage="browse" onHome={onHome} onBrowse={onBrowse || onHome} onMatches={onMatches || onBrowse || onHome} onReportItem={onReportItem || onHome} />
         <main className="pt-24 pb-12 px-4">
           <div className="mx-auto max-w-4xl">
             <div className="animate-pulse space-y-4">
@@ -163,7 +163,7 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotificati
   if (error || !report) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <Navbar authUser={authUser} activePage="browse" onHome={onHome} />
+        <Navbar authUser={authUser} activePage="browse" onHome={onHome} onBrowse={onBrowse || onHome} onMatches={onMatches || onBrowse || onHome} onReportItem={onReportItem || onHome} />
         <main className="pt-24 pb-12 px-4">
           <div className="mx-auto max-w-4xl text-center">
             <p className="text-red-600 font-medium">Error: {error || 'Report not found'}</p>
@@ -188,6 +188,9 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotificati
         authUser={authUser} 
         activePage="browse" 
         onHome={onHome}
+        onBrowse={onBrowse || onHome}
+        onMatches={onMatches || onBrowse || onHome}
+        onReportItem={onReportItem || onHome}
         unreadNotifications={unreadNotifications}
         onNotificationClick={onNotificationClick}
       />

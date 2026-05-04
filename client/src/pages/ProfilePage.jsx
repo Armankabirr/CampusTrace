@@ -56,7 +56,7 @@ function formatActivityDate(dateValue) {
   })
 }
 
-function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick, unreadNotifications, onNotificationClick, initialTab = null, highlightClaimId = null, autoOpenContactClaimId = null }) {
+function ProfilePage({ authUser, onHome, onBrowse, onMatches, onReportItem, onSignOut, onAvatarClick, unreadNotifications, onNotificationClick, initialTab = null, highlightClaimId = null, autoOpenContactClaimId = null }) {
   const [userData, setUserData] = useState(null)
   const [userReports, setUserReports] = useState([])
   const [userClaims, setUserClaims] = useState([])
@@ -589,8 +589,8 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
           authUser={authUser}
           activePage="profile"
           onHome={onHome}
-          onBrowse={onHome}
-          onMatches={onHome}
+          onBrowse={onBrowse || onHome}
+          onMatches={onMatches || onBrowse || onHome}
           onAvatarClick={onAvatarClick}
           onReportItem={onReportItem || onHome}
           unreadNotifications={unreadNotifications}
@@ -614,8 +614,8 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
         authUser={authUser}
         activePage="profile"
         onHome={onHome}
-        onBrowse={onHome}
-        onMatches={onHome}
+        onBrowse={onBrowse || onHome}
+        onMatches={onMatches || onBrowse || onHome}
         onAvatarClick={onAvatarClick}
         onReportItem={onReportItem || onHome}
         unreadNotifications={unreadNotifications}
