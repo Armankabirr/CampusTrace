@@ -49,13 +49,35 @@ const claimSchema = new mongoose.Schema(
     // Status of the claim
     status: {
       type: String,
-      enum: ['pending', 'verified', 'rejected', 'completed'],
+      enum: ['pending', 'verified', 'rejected', 'completed', 'returned'],
       default: 'pending',
     },
     // Additional notes from reporter/claimer
     notes: {
       type: String,
       default: null,
+    },
+    claimerConfirmedReturned: {
+      type: Boolean,
+      default: false,
+    },
+    reporterConfirmedReturned: {
+      type: Boolean,
+      default: false,
+    },
+    reporterVerifiedRealOwner: {
+      type: Boolean,
+      default: false,
+    },
+    claimerReview: {
+      rating: { type: Number, min: 1, max: 5, default: null },
+      comment: { type: String, default: null },
+      createdAt: { type: Date, default: null },
+    },
+    reporterReview: {
+      rating: { type: Number, min: 1, max: 5, default: null },
+      comment: { type: String, default: null },
+      createdAt: { type: Date, default: null },
     },
   },
   { timestamps: true }

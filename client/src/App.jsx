@@ -15,6 +15,9 @@ function App() {
   const [authUser, setAuthUser] = useState(null)
   const [selectedReportId, setSelectedReportId] = useState(null)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
+  const [profileInitialTab, setProfileInitialTab] = useState(null)
+  const [profileHighlightClaimId, setProfileHighlightClaimId] = useState(null)
+  const [profileAutoOpenContactClaimId, setProfileAutoOpenContactClaimId] = useState(null)
 
   useEffect(() => {
     const restoreSession = async () => {
@@ -109,11 +112,51 @@ function App() {
   }
 
   const handleNotificationClick = () => {
-    if (authUser) {
-      setCurrentPage('profile')
-      // In ProfilePage, we'll default to the first tab or add a notifications tab
-    }
+    // default simple click (no payload) navigates to profile
+    setCurrentPage('profile')
+    setProfileInitialTab(null)
+    setProfileHighlightClaimId(null)
+    setProfileAutoOpenContactClaimId(null)
   }
+
+  // overload to receive payloads from Navbar
+  const handleNotificationClickPayload = (payload) => {
+    if (!payload) return handleNotificationClick()
+
+    if (payload.markAllRead) {
+      setUnreadNotifications(0)
+      return
+    }
+
+    // If notification was marked read, decrement unread count
+    if (payload.notificationId) {
+      setUnreadNotifications((n) => Math.max(0, n - 1))
+    }
+
+    // If notification references a report, navigate to report detail
+    if (payload.reportId) {
+      setSelectedReportId(payload.reportId)
+      setCurrentPage('report-detail')
+      return
+    }
+
+    // otherwise open profile and show appropriate tab and highlight claim if provided
+    const ownerTypes = ['claim_received', 'claim_pending_approval']
+    if (ownerTypes.includes(payload.type)) {
+      setProfileInitialTab('Claims on My Items')
+      setProfileHighlightClaimId(payload.claimId || null)
+      setProfileAutoOpenContactClaimId(null)
+    } else {
+      setProfileInitialTab('My Claims')
+      setProfileHighlightClaimId(payload.claimId || null)
+      if (payload.type === 'claim_accepted') {
+        setProfileAutoOpenContactClaimId(payload.claimId || null)
+      } else {
+        setProfileAutoOpenContactClaimId(null)
+      }
+    }
+    setCurrentPage('profile')
+    }
 
   const handleHomeClick = () => {
     setCurrentPage('home')
@@ -175,7 +218,10 @@ function App() {
         onSignOut={handleSignOut}
         onAvatarClick={handleAvatarClick}
         unreadNotifications={unreadNotifications}
-        onNotificationClick={handleNotificationClick}
+        onNotificationClick={handleNotificationClickPayload}
+        initialTab={profileInitialTab}
+        highlightClaimId={profileHighlightClaimId}
+        autoOpenContactClaimId={profileAutoOpenContactClaimId}
       />
     ) : currentPage === 'report' ? (
       <ReportItemPage 
@@ -183,7 +229,7 @@ function App() {
         onHome={handleHomeClick} 
         onBack={handleHomeClick}
         unreadNotifications={unreadNotifications}
-        onNotificationClick={handleNotificationClick}
+        onNotificationClick={handleNotificationClickPayload}
       />
     ) : currentPage === 'browse' ? (
       <BrowsePage
@@ -194,7 +240,7 @@ function App() {
         onAvatarClick={handleAvatarClick}
         onViewReport={handleViewReport}
         unreadNotifications={unreadNotifications}
-        onNotificationClick={handleNotificationClick}
+        onNotificationClick={handleNotificationClickPayload}
       />
     ) : currentPage === 'report-detail' ? (
       <ReportDetailPage
@@ -203,7 +249,7 @@ function App() {
         onBack={handleBackFromReportDetail}
         reportId={selectedReportId}
         unreadNotifications={unreadNotifications}
-        onNotificationClick={handleNotificationClick}
+        onNotificationClick={handleNotificationClickPayload}
       />
     ) : (
       <HomePage
@@ -215,7 +261,7 @@ function App() {
         onHome={handleHomeClick}
         authUser={authUser}
         unreadNotifications={unreadNotifications}
-        onNotificationClick={handleNotificationClick}
+        onNotificationClick={handleNotificationClickPayload}
       />
     )
 

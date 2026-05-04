@@ -7,6 +7,8 @@ import {
   getClaimById,
   getClaimerContactInfo,
   getReporterContactInfo,
+  submitClaimerFeedback,
+  submitReporterFeedback,
 } from '../controllers/claim.controller.js';
 import { requireAuth } from '../middlewares/auth.middleware.js';
 
@@ -18,6 +20,8 @@ router.get('/my-claims', requireAuth, getMyClaimsAsClaimant);
 router.get('/by-report/:reportId', requireAuth, getPendingClaimsForReport);
 router.get('/:claimId/claimer-contact', requireAuth, getClaimerContactInfo);
 router.get('/:claimId/reporter-contact', requireAuth, getReporterContactInfo);
+router.put('/:claimId/claimer-feedback', requireAuth, submitClaimerFeedback);
+router.put('/:claimId/reporter-feedback', requireAuth, submitReporterFeedback);
 router.put('/:claimId/verify', requireAuth, verifyClaim);
 router.get('/:claimId', requireAuth, getClaimById);
 

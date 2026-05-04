@@ -56,7 +56,7 @@ function formatActivityDate(dateValue) {
   })
 }
 
-function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick, unreadNotifications, onNotificationClick }) {
+function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick, unreadNotifications, onNotificationClick, initialTab = null, highlightClaimId = null, autoOpenContactClaimId = null }) {
   const [userData, setUserData] = useState(null)
   const [userReports, setUserReports] = useState([])
   const [userClaims, setUserClaims] = useState([])
@@ -79,8 +79,19 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
   const [editLoading, setEditLoading] = useState(false)
   const [editError, setEditError] = useState(null)
   const [editSuccess, setEditSuccess] = useState(false)
+  const [contactLoading, setContactLoading] = useState({})
+  const [contactInfo, setContactInfo] = useState({})
+  const [claimActionLoading, setClaimActionLoading] = useState({})
+  const [claimerFeedbackLoading, setClaimerFeedbackLoading] = useState({})
+  const [reporterFeedbackLoading, setReporterFeedbackLoading] = useState({})
+  const [claimerFeedbackForm, setClaimerFeedbackForm] = useState({})
+  const [reporterFeedbackForm, setReporterFeedbackForm] = useState({})
 
   useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab)
+    }
+
     const fetchUserData = async () => {
       try {
         setLoading(true)
@@ -117,6 +128,64 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
 
     fetchUserData()
   }, [])
+
+  // also respond to changes to `initialTab` after mount
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab)
+  }, [initialTab])
+
+  // Auto-open reporter contact when navigated from a claim_accepted notification
+  useEffect(() => {
+    if (!autoOpenContactClaimId) return
+
+    const fetchReporterContact = async () => {
+      try {
+        setContactLoading((s) => ({ ...s, [autoOpenContactClaimId]: true }))
+        const token = localStorage.getItem('accessToken')
+        const res = await fetch(`/api/claims/${autoOpenContactClaimId}/reporter-contact`, {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) throw new Error('Failed to fetch contact')
+        const data = await res.json()
+        setContactInfo((s) => ({ ...s, [autoOpenContactClaimId]: data }))
+
+        // also highlight the claim
+        const el = document.getElementById(`claim-${autoOpenContactClaimId}`)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          el.classList.add('ring-2', 'ring-brand-300')
+          setTimeout(() => el.classList.remove('ring-2', 'ring-brand-300'), 3000)
+        }
+      } catch (err) {
+        console.error('Auto open contact failed', err)
+      } finally {
+        setContactLoading((s) => ({ ...s, [autoOpenContactClaimId]: false }))
+      }
+    }
+
+    fetchReporterContact()
+  }, [autoOpenContactClaimId])
+
+  useEffect(() => {
+    if (!highlightClaimId) return
+
+    const highlight = () => {
+      const el = document.getElementById(`claim-${highlightClaimId}`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        el.classList.add('ring-2', 'ring-brand-300')
+        setTimeout(() => el.classList.remove('ring-2', 'ring-brand-300'), 3000)
+        return true
+      }
+      return false
+    }
+
+    // Try immediately, and once more shortly after to allow lists to render
+    if (highlight()) return
+    const t = setTimeout(() => highlight(), 300)
+    return () => clearTimeout(t)
+  }, [highlightClaimId, userClaims, claimsOnMyItems])
 
   useEffect(() => {
     const fetchUserReports = async () => {
@@ -331,6 +400,120 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
     }
   }
 
+  const handleClaimDecision = async (claimId, approved) => {
+    let notes = null
+    if (!approved) {
+      const reason = window.prompt('Optional: add a rejection reason')
+      notes = reason ? String(reason).trim() : null
+    }
+
+    try {
+      setClaimActionLoading((prev) => ({ ...prev, [claimId]: true }))
+      const token = localStorage.getItem('accessToken')
+
+      const response = await fetch(`/api/claims/${claimId}/verify`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ approved, notes }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || 'Failed to update claim status')
+      }
+
+      const data = await response.json()
+      setClaimsOnMyItems((prev) =>
+        prev.map((c) =>
+          c._id === claimId
+            ? {
+                ...c,
+                status: data?.claim?.status || (approved ? 'completed' : 'rejected'),
+                notes: data?.claim?.notes || notes,
+              }
+            : c
+        )
+      )
+    } catch (err) {
+      console.error('Claim decision error:', err)
+      window.alert(err.message || 'Failed to update claim')
+    } finally {
+      setClaimActionLoading((prev) => ({ ...prev, [claimId]: false }))
+    }
+  }
+
+  const handleSubmitClaimerFeedback = async (claimId) => {
+    const form = claimerFeedbackForm[claimId] || {}
+    try {
+      setClaimerFeedbackLoading((prev) => ({ ...prev, [claimId]: true }))
+      const token = localStorage.getItem('accessToken')
+
+      const response = await fetch(`/api/claims/${claimId}/claimer-feedback`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          returned: Boolean(form.returned),
+          rating: form.rating ? Number(form.rating) : undefined,
+          comment: form.comment || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || 'Failed to submit feedback')
+      }
+
+      const data = await response.json()
+      setUserClaims((prev) => prev.map((c) => (c._id === claimId ? { ...c, ...data.claim } : c)))
+    } catch (err) {
+      console.error('Claimer feedback error:', err)
+      window.alert(err.message || 'Failed to submit feedback')
+    } finally {
+      setClaimerFeedbackLoading((prev) => ({ ...prev, [claimId]: false }))
+    }
+  }
+
+  const handleSubmitReporterFeedback = async (claimId) => {
+    const form = reporterFeedbackForm[claimId] || {}
+    try {
+      setReporterFeedbackLoading((prev) => ({ ...prev, [claimId]: true }))
+      const token = localStorage.getItem('accessToken')
+
+      const response = await fetch(`/api/claims/${claimId}/reporter-feedback`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isRealOwner: Boolean(form.isRealOwner),
+          returned: Boolean(form.returned),
+          rating: form.rating ? Number(form.rating) : undefined,
+          comment: form.comment || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || 'Failed to submit review')
+      }
+
+      const data = await response.json()
+      setClaimsOnMyItems((prev) => prev.map((c) => (c._id === claimId ? { ...c, ...data.claim } : c)))
+    } catch (err) {
+      console.error('Reporter feedback error:', err)
+      window.alert(err.message || 'Failed to submit review')
+    } finally {
+      setReporterFeedbackLoading((prev) => ({ ...prev, [claimId]: false }))
+    }
+  }
+
   const displayUser = userData || authUser
   const userName = displayUser?.name || 'Profile'
   const studentId = displayUser?.studentId || 'Loading...'
@@ -355,11 +538,13 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
 
   const formatClaimStatus = (status) => {
     if (!status) return 'Pending'
+    if (status.toLowerCase() === 'completed') return 'Accepted'
     return status.charAt(0).toUpperCase() + status.slice(1)
   }
 
   const getClaimBadgeTone = (status) => {
     const normalized = (status || '').toLowerCase()
+    if (normalized === 'returned') return 'bg-indigo-100 text-indigo-700'
     if (normalized === 'completed' || normalized === 'verified') return 'bg-emerald-100 text-emerald-700'
     if (normalized === 'rejected') return 'bg-red-100 text-red-700'
     return 'bg-amber-100 text-amber-700'
@@ -630,6 +815,7 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                 <div className="space-y-3">
                   {userClaims.map((claim) => (
                     <article
+                      id={`claim-${claim._id}`}
                       key={claim._id}
                       className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
                     >
@@ -669,6 +855,120 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                           <p className="mt-1 text-xs text-slate-500">
                             {claim.reportId?.category || 'Uncategorized'} • {claim.reportId?.lastSeenLocation || 'Unknown location'}
                           </p>
+                          {['completed', 'returned'].includes(claim.status) && (
+                            <div className="mt-3">
+                              {contactLoading[claim._id] ? (
+                                <p className="text-sm text-slate-500">Loading contact...</p>
+                              ) : contactInfo[claim._id] ? (
+                                <div className="mt-2 overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-sky-50 p-4 text-sm shadow-sm">
+                                  <div className="flex items-center justify-between">
+                                    <p className="font-semibold text-indigo-900">Reporter Contact</p>
+                                    <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">Unlocked</span>
+                                  </div>
+                                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                                    <div className="rounded-lg bg-white/80 p-2">
+                                      <p className="text-[11px] text-slate-500">Name</p>
+                                      <p className="text-xs font-semibold text-slate-700">{contactInfo[claim._id].reporterName}</p>
+                                    </div>
+                                    <div className="rounded-lg bg-white/80 p-2">
+                                      <p className="text-[11px] text-slate-500">Email</p>
+                                      <p className="text-xs font-semibold text-slate-700 break-all">{contactInfo[claim._id].reporterEmail}</p>
+                                    </div>
+                                    <div className="rounded-lg bg-white/80 p-2">
+                                      <p className="text-[11px] text-slate-500">Phone</p>
+                                      <p className="text-xs font-semibold text-slate-700">{contactInfo[claim._id].reporterPhone}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      setContactLoading((s) => ({ ...s, [claim._id]: true }))
+                                      const token = localStorage.getItem('accessToken')
+                                      const res = await fetch(`/api/claims/${claim._id}/reporter-contact`, {
+                                        method: 'GET',
+                                        headers: { Authorization: `Bearer ${token}` },
+                                      })
+                                      if (!res.ok) throw new Error('Failed to fetch contact')
+                                      const data = await res.json()
+                                      setContactInfo((s) => ({ ...s, [claim._id]: data }))
+                                    } catch (err) {
+                                      console.error(err)
+                                    } finally {
+                                      setContactLoading((s) => ({ ...s, [claim._id]: false }))
+                                    }
+                                  }}
+                                  className="mt-2 rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-white"
+                                >
+                                  View Reporter Contact
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {['completed', 'returned'].includes(claim.status) && (
+                            <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                              <p className="text-xs font-semibold text-slate-700">Claimer Confirmation & Review</p>
+                              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                                <label className="inline-flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={Boolean((claimerFeedbackForm[claim._id] || {}).returned || claim.claimerConfirmedReturned)}
+                                    onChange={(e) =>
+                                      setClaimerFeedbackForm((prev) => ({
+                                        ...prev,
+                                        [claim._id]: { ...(prev[claim._id] || {}), returned: e.target.checked },
+                                      }))
+                                    }
+                                  />
+                                  I confirm the item was returned
+                                </label>
+                                {claim.claimerConfirmedReturned && (
+                                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700">Confirmed</span>
+                                )}
+                              </div>
+                              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                <select
+                                  value={(claimerFeedbackForm[claim._id] || {}).rating || ''}
+                                  onChange={(e) =>
+                                    setClaimerFeedbackForm((prev) => ({
+                                      ...prev,
+                                      [claim._id]: { ...(prev[claim._id] || {}), rating: e.target.value },
+                                    }))
+                                  }
+                                  className="rounded-lg border border-slate-300 px-3 py-2 text-xs"
+                                >
+                                  <option value="">Rate reporter (1-5)</option>
+                                  <option value="1">1</option>
+                                  <option value="2">2</option>
+                                  <option value="3">3</option>
+                                  <option value="4">4</option>
+                                  <option value="5">5</option>
+                                </select>
+                                <input
+                                  type="text"
+                                  value={(claimerFeedbackForm[claim._id] || {}).comment || ''}
+                                  onChange={(e) =>
+                                    setClaimerFeedbackForm((prev) => ({
+                                      ...prev,
+                                      [claim._id]: { ...(prev[claim._id] || {}), comment: e.target.value },
+                                    }))
+                                  }
+                                  placeholder="Share your experience"
+                                  className="rounded-lg border border-slate-300 px-3 py-2 text-xs"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                disabled={Boolean(claimerFeedbackLoading[claim._id])}
+                                onClick={() => handleSubmitClaimerFeedback(claim._id)}
+                                className="mt-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+                              >
+                                {claimerFeedbackLoading[claim._id] ? 'Saving...' : 'Submit Confirmation & Review'}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -707,6 +1007,7 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                 <div className="space-y-3">
                   {claimsOnMyItems.map((claim) => (
                     <article
+                      id={`claim-${claim._id}`}
                       key={claim._id}
                       className="flex flex-col gap-4 rounded-2xl border border-slate-200 p-4 sm:p-5"
                     >
@@ -719,9 +1020,7 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center text-xl text-slate-400">
-                              📦
-                            </div>
+                            <div className="flex h-full w-full items-center justify-center text-xl text-slate-400">📦</div>
                           )}
                         </div>
 
@@ -745,6 +1044,44 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                           <p className="mt-1 text-xs text-slate-500">
                             {claim.reportInfo?.category || 'Uncategorized'} • {claim.reportInfo?.lastSeenLocation || 'Unknown location'}
                           </p>
+                          {['pending', 'verified'].includes(claim.status) && (
+                            <div className="mt-3">
+                              {contactLoading[`owner-${claim._id}`] ? (
+                                <p className="text-sm text-slate-500">Loading contact...</p>
+                              ) : contactInfo[`owner-${claim._id}`] ? (
+                                <div className="mt-2 rounded-md bg-slate-50 p-3 text-sm">
+                                  <p className="font-semibold">Claimer Contact</p>
+                                  <p className="text-xs text-slate-600">{contactInfo[`owner-${claim._id}`].claimerName}</p>
+                                  <p className="text-xs text-slate-600">{contactInfo[`owner-${claim._id}`].claimerEmail}</p>
+                                  <p className="text-xs text-slate-600">{contactInfo[`owner-${claim._id}`].claimerPhone}</p>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      setContactLoading((s) => ({ ...s, [`owner-${claim._id}`]: true }))
+                                      const token = localStorage.getItem('accessToken')
+                                      const res = await fetch(`/api/claims/${claim._id}/claimer-contact`, {
+                                        method: 'GET',
+                                        headers: { Authorization: `Bearer ${token}` },
+                                      })
+                                      if (!res.ok) throw new Error('Failed to fetch contact')
+                                      const data = await res.json()
+                                      setContactInfo((s) => ({ ...s, [`owner-${claim._id}`]: data }))
+                                    } catch (err) {
+                                      console.error(err)
+                                    } finally {
+                                      setContactLoading((s) => ({ ...s, [`owner-${claim._id}`]: false }))
+                                    }
+                                  }}
+                                  className="mt-2 rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-white"
+                                >
+                                  View Claimer Contact
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -798,17 +1135,94 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                           <div className="flex flex-wrap gap-3">
                             <button
                               type="button"
+                              disabled={Boolean(claimActionLoading[claim._id])}
+                              onClick={() => handleClaimDecision(claim._id, true)}
                               className="flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
                             >
-                              Accept Claim
+                              {claimActionLoading[claim._id] ? 'Updating...' : 'Accept Claim'}
                             </button>
                             <button
                               type="button"
+                              disabled={Boolean(claimActionLoading[claim._id])}
+                              onClick={() => handleClaimDecision(claim._id, false)}
                               className="flex-1 rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
                             >
-                              Reject Claim
+                              {claimActionLoading[claim._id] ? 'Updating...' : 'Reject Claim'}
                             </button>
                           </div>
+                        </div>
+                      )}
+
+                      {['completed', 'returned'].includes(claim.status) && (
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <p className="text-xs font-semibold text-slate-700">Reporter Review & Verification</p>
+                          <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={Boolean((reporterFeedbackForm[claim._id] || {}).isRealOwner || claim.reporterVerifiedRealOwner)}
+                                onChange={(e) =>
+                                  setReporterFeedbackForm((prev) => ({
+                                    ...prev,
+                                    [claim._id]: { ...(prev[claim._id] || {}), isRealOwner: e.target.checked },
+                                  }))
+                                }
+                              />
+                              Claimer is the real owner
+                            </label>
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={Boolean((reporterFeedbackForm[claim._id] || {}).returned || claim.reporterConfirmedReturned)}
+                                onChange={(e) =>
+                                  setReporterFeedbackForm((prev) => ({
+                                    ...prev,
+                                    [claim._id]: { ...(prev[claim._id] || {}), returned: e.target.checked },
+                                  }))
+                                }
+                              />
+                              Item has been returned
+                            </label>
+                          </div>
+                          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                            <select
+                              value={(reporterFeedbackForm[claim._id] || {}).rating || ''}
+                              onChange={(e) =>
+                                setReporterFeedbackForm((prev) => ({
+                                  ...prev,
+                                  [claim._id]: { ...(prev[claim._id] || {}), rating: e.target.value },
+                                }))
+                              }
+                              className="rounded-lg border border-slate-300 px-3 py-2 text-xs"
+                            >
+                              <option value="">Rate claimer (1-5)</option>
+                              <option value="1">1</option>
+                              <option value="2">2</option>
+                              <option value="3">3</option>
+                              <option value="4">4</option>
+                              <option value="5">5</option>
+                            </select>
+                            <input
+                              type="text"
+                              value={(reporterFeedbackForm[claim._id] || {}).comment || ''}
+                              onChange={(e) =>
+                                setReporterFeedbackForm((prev) => ({
+                                  ...prev,
+                                  [claim._id]: { ...(prev[claim._id] || {}), comment: e.target.value },
+                                }))
+                              }
+                              placeholder="Write reviewer notes"
+                              className="rounded-lg border border-slate-300 px-3 py-2 text-xs"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            disabled={Boolean(reporterFeedbackLoading[claim._id])}
+                            onClick={() => handleSubmitReporterFeedback(claim._id)}
+                            className="mt-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
+                          >
+                            {reporterFeedbackLoading[claim._id] ? 'Saving...' : 'Submit Reporter Review'}
+                          </button>
                         </div>
                       )}
                     </article>

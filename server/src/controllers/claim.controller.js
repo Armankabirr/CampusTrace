@@ -324,8 +324,8 @@ export const getReporterContactInfo = async (req, res) => {
       return res.status(403).json({ message: 'You do not have permission to view this contact information.' });
     }
 
-    // Only allow viewing contact if claim is completed (accepted)
-    if (claim.status !== 'completed') {
+    // Allow viewing contact after acceptance and even after final returned state
+    if (!['completed', 'returned'].includes(claim.status)) {
       return res.status(400).json({ message: 'Contact information is only available after your claim is accepted.' });
     }
 
@@ -340,5 +340,105 @@ export const getReporterContactInfo = async (req, res) => {
   } catch (error) {
     console.error('Error fetching reporter contact info:', error);
     return res.status(500).json({ message: 'Failed to fetch contact information.' });
+  }
+};
+
+const maybeMarkReturned = async (claim) => {
+  if (claim.claimerConfirmedReturned && claim.reporterConfirmedReturned) {
+    claim.status = 'returned';
+    await claim.save();
+    await Report.findByIdAndUpdate(claim.reportId, { status: 'resolved' });
+  }
+};
+
+export const submitClaimerFeedback = async (req, res) => {
+  try {
+    const { claimId } = req.params;
+    const { returned, rating, comment } = req.body;
+    const userId = req.user._id;
+
+    const claim = await Claim.findById(claimId);
+    if (!claim) {
+      return res.status(404).json({ message: 'Claim not found.' });
+    }
+
+    if (claim.claimerId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'You do not have permission to review this claim.' });
+    }
+
+    if (!['completed', 'returned'].includes(claim.status)) {
+      return res.status(400).json({ message: 'You can review only after claim acceptance.' });
+    }
+
+    if (typeof returned === 'boolean') {
+      claim.claimerConfirmedReturned = returned;
+    }
+
+    if (rating || comment) {
+      claim.claimerReview = {
+        rating: rating ? Number(rating) : null,
+        comment: comment ? String(comment).trim() : null,
+        createdAt: new Date(),
+      };
+    }
+
+    await claim.save();
+    await maybeMarkReturned(claim);
+
+    return res.status(200).json({
+      message: 'Your feedback has been saved.',
+      claim,
+    });
+  } catch (error) {
+    console.error('Error submitting claimer feedback:', error);
+    return res.status(500).json({ message: 'Failed to submit feedback.' });
+  }
+};
+
+export const submitReporterFeedback = async (req, res) => {
+  try {
+    const { claimId } = req.params;
+    const { isRealOwner, returned, rating, comment } = req.body;
+    const userId = req.user._id;
+
+    const claim = await Claim.findById(claimId).populate('reportId');
+    if (!claim) {
+      return res.status(404).json({ message: 'Claim not found.' });
+    }
+
+    if (claim.reportId.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'You do not have permission to review this claim.' });
+    }
+
+    if (!['completed', 'returned'].includes(claim.status)) {
+      return res.status(400).json({ message: 'You can review only after claim acceptance.' });
+    }
+
+    if (typeof isRealOwner === 'boolean') {
+      claim.reporterVerifiedRealOwner = isRealOwner;
+    }
+
+    if (typeof returned === 'boolean') {
+      claim.reporterConfirmedReturned = returned;
+    }
+
+    if (rating || comment) {
+      claim.reporterReview = {
+        rating: rating ? Number(rating) : null,
+        comment: comment ? String(comment).trim() : null,
+        createdAt: new Date(),
+      };
+    }
+
+    await claim.save();
+    await maybeMarkReturned(claim);
+
+    return res.status(200).json({
+      message: 'Your review has been saved.',
+      claim,
+    });
+  } catch (error) {
+    console.error('Error submitting reporter feedback:', error);
+    return res.status(500).json({ message: 'Failed to submit review.' });
   }
 };
