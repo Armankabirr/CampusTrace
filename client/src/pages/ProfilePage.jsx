@@ -1160,25 +1160,6 @@ function ProfilePage({ authUser, onHome, onBrowse, onMatches, onReportItem, onSi
                             </p>
                           </div>
                         </div>
-                        {(claim.foundItemDescription || claim.foundItemImageUrl) && (
-                          <div className="mt-4 space-y-3">
-                            {claim.foundItemDescription && (
-                              <div className="rounded-md border border-slate-100 bg-white p-3">
-                                <p className="text-xs font-semibold text-slate-600">Claim Description</p>
-                                <p className="mt-1 text-sm text-slate-700 whitespace-pre-line">{claim.foundItemDescription}</p>
-                              </div>
-                            )}
-                            {claim.foundItemImageUrl && (
-                              <div className="overflow-hidden rounded-md border border-slate-100 bg-white">
-                                <img
-                                  src={claim.foundItemImageUrl}
-                                  alt="Claim evidence"
-                                  className="h-56 w-full object-cover"
-                                />
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
 
                       {claim.status === 'pending' && (
