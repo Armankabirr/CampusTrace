@@ -56,7 +56,7 @@ function formatActivityDate(dateValue) {
   })
 }
 
-function ProfilePage({ authUser, onHome, onBrowse, onMatches, onReportItem, onSignOut, onAvatarClick, unreadNotifications, onNotificationClick, initialTab = null, highlightClaimId = null, autoOpenContactClaimId = null }) {
+function ProfilePage({ authUser, onHome, onBrowse, onMatches, onReportItem, onSignOut, onAvatarClick, unreadNotifications, pendingMatchCount, onNotificationClick, initialTab = null, highlightClaimId = null, autoOpenContactClaimId = null }) {
   const [userData, setUserData] = useState(null)
   const [userReports, setUserReports] = useState([])
   const [userClaims, setUserClaims] = useState([])
@@ -594,6 +594,7 @@ function ProfilePage({ authUser, onHome, onBrowse, onMatches, onReportItem, onSi
           onAvatarClick={onAvatarClick}
           onReportItem={onReportItem || onHome}
           unreadNotifications={unreadNotifications}
+          pendingMatchCount={pendingMatchCount}
           onNotificationClick={onNotificationClick}
         />
         <main className="pt-24">
@@ -619,6 +620,7 @@ function ProfilePage({ authUser, onHome, onBrowse, onMatches, onReportItem, onSi
         onAvatarClick={onAvatarClick}
         onReportItem={onReportItem || onHome}
         unreadNotifications={unreadNotifications}
+        pendingMatchCount={pendingMatchCount}
         onNotificationClick={onNotificationClick}
       />
 

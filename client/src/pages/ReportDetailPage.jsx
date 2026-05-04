@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 
-function ReportDetailPage({ authUser, onHome, onBrowse, onMatches, onReportItem, onBack, reportId, unreadNotifications, onNotificationClick }) {
+function ReportDetailPage({ authUser, onHome, onBrowse, onMatches, onReportItem, onBack, reportId, unreadNotifications, pendingMatchCount, onNotificationClick }) {
   const [report, setReport] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -146,7 +146,7 @@ function ReportDetailPage({ authUser, onHome, onBrowse, onMatches, onReportItem,
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <Navbar authUser={authUser} activePage="browse" onHome={onHome} onBrowse={onBrowse || onHome} onMatches={onMatches || onBrowse || onHome} onReportItem={onReportItem || onHome} />
+        <Navbar authUser={authUser} activePage="browse" onHome={onHome} onBrowse={onBrowse || onHome} onMatches={onMatches || onBrowse || onHome} onReportItem={onReportItem || onHome} pendingMatchCount={pendingMatchCount} />
         <main className="pt-24 pb-12 px-4">
           <div className="mx-auto max-w-4xl">
             <div className="animate-pulse space-y-4">
@@ -163,7 +163,7 @@ function ReportDetailPage({ authUser, onHome, onBrowse, onMatches, onReportItem,
   if (error || !report) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <Navbar authUser={authUser} activePage="browse" onHome={onHome} onBrowse={onBrowse || onHome} onMatches={onMatches || onBrowse || onHome} onReportItem={onReportItem || onHome} />
+        <Navbar authUser={authUser} activePage="browse" onHome={onHome} onBrowse={onBrowse || onHome} onMatches={onMatches || onBrowse || onHome} onReportItem={onReportItem || onHome} pendingMatchCount={pendingMatchCount} />
         <main className="pt-24 pb-12 px-4">
           <div className="mx-auto max-w-4xl text-center">
             <p className="text-red-600 font-medium">Error: {error || 'Report not found'}</p>
@@ -192,6 +192,7 @@ function ReportDetailPage({ authUser, onHome, onBrowse, onMatches, onReportItem,
         onMatches={onMatches || onBrowse || onHome}
         onReportItem={onReportItem || onHome}
         unreadNotifications={unreadNotifications}
+        pendingMatchCount={pendingMatchCount}
         onNotificationClick={onNotificationClick}
       />
 
@@ -238,19 +239,6 @@ function ReportDetailPage({ authUser, onHome, onBrowse, onMatches, onReportItem,
                 <p className="text-slate-600 leading-relaxed">{report.description}</p>
               </div>
 
-              {/* Show verification questions on the page for found items (debug / UX) */}
-              {!isLostItem && proofQuestions.length > 0 && (
-                <div className="bg-white rounded-lg p-6 mb-6">
-                  <h2 className="font-bold text-lg mb-2">Verification Questions</h2>
-                  <ol className="list-decimal list-inside text-slate-700 space-y-2">
-                    {proofQuestions.map((q, i) => (
-                      <li key={i}>{q.question}</li>
-                    ))}
-                  </ol>
-                  <p className="mt-2 text-sm text-slate-500">Click the button to answer these questions and claim this item.</p>
-                </div>
-              )}
-
               <div className="bg-white rounded-lg p-6 mb-6 space-y-3">
                 <div>
                   <p className="text-sm text-slate-500 font-medium mb-1">Last Seen / Found Location</p>
@@ -277,19 +265,11 @@ function ReportDetailPage({ authUser, onHome, onBrowse, onMatches, onReportItem,
 
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg p-6 mb-6">
-                <h3 className="font-bold text-lg mb-4">Contact Information</h3>
+                <h3 className="font-bold text-lg mb-4">Posted by</h3>
                 <div className="space-y-3">
                   <div>
                     <p className="text-xs text-slate-500 uppercase font-medium">Name</p>
                     <p className="text-slate-900">{report.contactName}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase font-medium">Email</p>
-                    <p className="text-slate-900 break-all">{report.contactEmail}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase font-medium">Phone</p>
-                    <p className="text-slate-900">{report.contactPhone}</p>
                   </div>
                 </div>
               </div>
@@ -369,53 +349,50 @@ function ReportDetailPage({ authUser, onHome, onBrowse, onMatches, onReportItem,
                             )}
                           </div>
                         ) : (
-                          proofQuestions.map((question, idx) => (
-                            <div key={idx}>
+                          <>
+                            {proofQuestions.map((question, idx) => (
+                              <div key={idx}>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                  {question.question}
+                                </label>
+                                <input
+                                  type="text"
+                                  value={claimData[`answer${idx}`] || ''}
+                                  onChange={(e) => handleClaimChange(`answer${idx}`, e.target.value)}
+                                  placeholder="Your answer"
+                                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                  required
+                                />
+                              </div>
+                            ))}
+                            <div>
                               <label className="block text-sm font-medium text-slate-700 mb-2">
-                                {question.question}
+                                Optional Description
                               </label>
-                              <input
-                                type="text"
-                                value={claimData[`answer${idx}`] || ''}
-                                onChange={(e) => handleClaimChange(`answer${idx}`, e.target.value)}
-                                placeholder="Your answer"
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
-                                required
+                              <textarea
+                                value={claimData.description || ''}
+                                onChange={(e) => handleClaimChange('description', e.target.value)}
+                                placeholder="Add any details that help the reporter understand your claim"
+                                className="w-full min-h-28 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                               />
                             </div>
-                          ))
+
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Optional Photo
+                              </label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleClaimPhotoChange}
+                                className="w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:font-medium file:text-brand-700 hover:file:bg-brand-100"
+                              />
+                              {claimPhoto && (
+                                <p className="mt-2 text-xs text-slate-500">Selected: {claimPhoto.name}</p>
+                              )}
+                            </div>
+                          </>
                         )}
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Optional Description
-                          </label>
-                          <textarea
-                            value={claimData.description || ''}
-                            onChange={(e) => handleClaimChange('description', e.target.value)}
-                            placeholder={
-                              isLostItem
-                                ? 'Share details that help the reporter confirm you found it'
-                                : 'Add any details that help the reporter understand your claim'
-                            }
-                            className="w-full min-h-28 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Optional Photo
-                          </label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleClaimPhotoChange}
-                            className="w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:font-medium file:text-brand-700 hover:file:bg-brand-100"
-                          />
-                          {claimPhoto && (
-                            <p className="mt-2 text-xs text-slate-500">Selected: {claimPhoto.name}</p>
-                          )}
-                        </div>
 
                         <div className="flex gap-2 pt-2">
                           <button

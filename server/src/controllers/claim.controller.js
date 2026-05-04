@@ -121,6 +121,18 @@ export const createClaim = async (req, res) => {
           });
       }
 
+      let foundItemImageUrl = null;
+      let foundItemImageFileId = null;
+
+      if (attachmentFile) {
+        const uploadResult = await uploadImageToImageKit(
+          attachmentFile,
+          `claim-found-${reportId}-${Date.now()}`
+        );
+        foundItemImageUrl = uploadResult.url;
+        foundItemImageFileId = uploadResult.fileId;
+      }
+
       // Verify answers
       let allCorrect = true;
       for (let i = 0; i < proofQuestions.length; i++) {
@@ -142,24 +154,14 @@ export const createClaim = async (req, res) => {
         claimerName: req.user.name,
         answersProvided,
         foundItemDescription: description ? String(description).trim() : null,
-        foundItemImageUrl: null,
-        foundItemImageFileId: null,
+        foundItemImageUrl,
+        foundItemImageFileId,
         isVerified: allCorrect, // This tracks if answers are correct, but reporter makes final decision
         status: 'pending', // Always pending initially for found items - reporter manually verifies
         verificationMessage: allCorrect
           ? 'Your answers are correct! Item owner has been notified to verify.'
           : 'Some answers may be incorrect. Item owner will review your claim.',
       });
-
-      if (attachmentFile) {
-        const uploadResult = await uploadImageToImageKit(
-          attachmentFile,
-          `claim-found-${reportId}-${Date.now()}`
-        );
-        claim.foundItemImageUrl = uploadResult.url;
-        claim.foundItemImageFileId = uploadResult.fileId;
-        await claim.save();
-      }
 
       // Create notification for report owner (found item claim)
       await Notification.create({

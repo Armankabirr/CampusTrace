@@ -11,6 +11,7 @@ function Navbar({
   onAvatarClick,
   onReportItem,
   unreadNotifications = 0,
+  pendingMatchCount = 0,
   onNotificationClick,
 }) {
   const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : 'U'
@@ -98,6 +99,7 @@ function Navbar({
           notificationId: n._id,
           claimId: n.claimId?._id || n.claimId,
           reportId: n.reportId?._id || n.reportId,
+          matchId: n.matchId?._id || n.matchId,
           type: n.type,
         })
       }
@@ -136,8 +138,15 @@ function Navbar({
           <button className="rounded-full px-4 py-1.5 transition hover:bg-white" onClick={onBrowse} type="button">
             Browse
           </button>
-          <button className="rounded-full px-4 py-1.5 transition hover:bg-white" onClick={onMatches} type="button">
+          <button
+            className={`relative rounded-full px-4 py-1.5 transition ${activePage === 'matches' ? 'bg-white text-brand-600 shadow' : 'hover:bg-white'}`}
+            onClick={onMatches}
+            type="button"
+          >
             Matches
+            {pendingMatchCount > 0 && (
+              <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+            )}
           </button>
         </div>
 

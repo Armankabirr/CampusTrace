@@ -36,7 +36,7 @@ function formatDate(value) {
   return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function ReportItemPage({ authUser, onHome, onBrowse, onMatches, onReportItem, onBack, unreadNotifications, onNotificationClick }) {
+function ReportItemPage({ authUser, onHome, onBrowse, onMatches, onReportItem, onBack, unreadNotifications, pendingMatchCount, onNotificationClick }) {
   const fileInputRef = useRef(null)
   const [formStep, setFormStep] = useState(1)
   const [formData, setFormData] = useState({
@@ -263,6 +263,7 @@ function ReportItemPage({ authUser, onHome, onBrowse, onMatches, onReportItem, o
         onAvatarClick={authUser ? onBack : onHome}
         onReportItem={onReportItem || onHome}
         unreadNotifications={unreadNotifications}
+        pendingMatchCount={pendingMatchCount}
         onNotificationClick={onNotificationClick}
       />
 

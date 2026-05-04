@@ -8,48 +8,25 @@ const escapeHtml = (value) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 
-const buildMimeMessage = ({ to, otp, type = 'signup' }) => {
-  let subject, text, heading, description;
-
-  if (type === 'password_reset') {
-    subject = 'CampusTrace Password Reset OTP';
-    heading = 'Reset your password';
-    description = 'Use the OTP below to reset your password.';
-    text = `Your CampusTrace password reset code is ${otp}. It expires in ${config.otpExpiryMinutes} minutes.`;
-  } else {
-    subject = 'CampusTrace OTP Verification';
-    heading = 'Verify your account';
-    description = 'Use the OTP below to complete signup.';
-    text = `Your CampusTrace verification code is ${otp}. It expires in ${config.otpExpiryMinutes} minutes.`;
-  }
-
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
-      <h2 style="margin-bottom: 8px;">${heading}</h2>
-      <p style="margin-top: 0; color: #555;">${description}</p>
-      <div style="font-size: 32px; letter-spacing: 6px; font-weight: bold; margin: 20px 0;">${escapeHtml(otp)}</div>
-      <p style="color: #777;">This OTP will expire in ${config.otpExpiryMinutes} minutes.</p>
-    </div>
-  `;
-
+const buildMimeMessage = ({ to, subject, text, html, boundary }) => {
   const mimeMessage = [
     `From: CampusTrace <${config.googleUser}>`,
     `To: ${to}`,
     `Subject: ${subject}`,
     'MIME-Version: 1.0',
-    'Content-Type: multipart/alternative; boundary="campustrace-otp-boundary"',
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
     '',
-    '--campustrace-otp-boundary',
+    `--${boundary}`,
     'Content-Type: text/plain; charset="UTF-8"',
     '',
     text,
     '',
-    '--campustrace-otp-boundary',
+    `--${boundary}`,
     'Content-Type: text/html; charset="UTF-8"',
     '',
     html,
     '',
-    '--campustrace-otp-boundary--',
+    `--${boundary}--`,
     '',
   ].join('\r\n');
 
@@ -83,10 +60,10 @@ const refreshGmailAccessToken = async () => {
   return tokenData.access_token;
 };
 
-export const sendOtpEmail = async ({ to, otp, type = 'signup' }) => {
+export const sendEmail = async ({ to, subject, text, html, boundary = 'campustrace-boundary' }) => {
   try {
     const accessToken = await refreshGmailAccessToken();
-    const raw = buildMimeMessage({ to, otp, type });
+    const raw = buildMimeMessage({ to, subject, text, html, boundary });
 
     const sendResponse = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
       method: 'POST',
@@ -108,8 +85,44 @@ export const sendOtpEmail = async ({ to, otp, type = 'signup' }) => {
       throw error;
     }
 
-    console.warn(`OTP email delivery failed for ${to}: ${error.message}`);
-    console.info(`CampusTrace OTP for ${to}: ${otp}`);
+    console.warn(`Email delivery failed for ${to}: ${error.message}`);
+    console.info(`CampusTrace email preview for ${to}: ${subject}`);
     return { fallback: true };
   }
+};
+
+const buildOtpHtml = (heading, description, otp) => `
+  <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
+    <h2 style="margin-bottom: 8px;">${heading}</h2>
+    <p style="margin-top: 0; color: #555;">${description}</p>
+    <div style="font-size: 32px; letter-spacing: 6px; font-weight: bold; margin: 20px 0;">${escapeHtml(otp)}</div>
+    <p style="color: #777;">This OTP will expire in ${config.otpExpiryMinutes} minutes.</p>
+  </div>
+`;
+
+export const sendOtpEmail = async ({ to, otp, type = 'signup' }) => {
+  let subject;
+  let text;
+  let heading;
+  let description;
+
+  if (type === 'password_reset') {
+    subject = 'CampusTrace Password Reset OTP';
+    heading = 'Reset your password';
+    description = 'Use the OTP below to reset your password.';
+    text = `Your CampusTrace password reset code is ${otp}. It expires in ${config.otpExpiryMinutes} minutes.`;
+  } else {
+    subject = 'CampusTrace OTP Verification';
+    heading = 'Verify your account';
+    description = 'Use the OTP below to complete signup.';
+    text = `Your CampusTrace verification code is ${otp}. It expires in ${config.otpExpiryMinutes} minutes.`;
+  }
+
+  return sendEmail({
+    to,
+    subject,
+    text,
+    html: buildOtpHtml(heading, description, otp),
+    boundary: 'campustrace-otp-boundary',
+  });
 };

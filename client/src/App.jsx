@@ -7,6 +7,7 @@ import ProfilePage from './pages/ProfilePage'
 import ReportItemPage from './pages/ReportItemPage'
 import BrowsePage from './pages/BrowsePage'
 import ReportDetailPage from './pages/ReportDetailPage'
+import MatchesPage from './pages/MatchesPage'
 import Sign from './pages/Sign'
 
 function App() {
@@ -14,7 +15,9 @@ function App() {
   const [prefilledLoginEmail, setPrefilledLoginEmail] = useState('')
   const [authUser, setAuthUser] = useState(null)
   const [selectedReportId, setSelectedReportId] = useState(null)
+  const [selectedMatchId, setSelectedMatchId] = useState(null)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
+  const [pendingMatchCount, setPendingMatchCount] = useState(0)
   const [profileInitialTab, setProfileInitialTab] = useState(null)
   const [profileHighlightClaimId, setProfileHighlightClaimId] = useState(null)
   const [profileAutoOpenContactClaimId, setProfileAutoOpenContactClaimId] = useState(null)
@@ -83,6 +86,68 @@ function App() {
     return () => clearInterval(interval)
   }, [authUser])
 
+  // Fetch pending match count
+  useEffect(() => {
+    if (!authUser) {
+      setPendingMatchCount(0)
+      return
+    }
+
+    const refreshPendingMatchCount = async () => {
+      try {
+        const token = localStorage.getItem('accessToken')
+        const response = await fetch('/api/matches', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (!response.ok) {
+          setPendingMatchCount(0)
+          return
+        }
+
+        const data = await response.json()
+        const matches = Array.isArray(data.matches) ? data.matches : []
+        setPendingMatchCount(matches.filter((match) => match.status === 'pending').length)
+      } catch (error) {
+        console.error('Error fetching pending matches:', error)
+      }
+    }
+
+    refreshPendingMatchCount()
+    const interval = setInterval(refreshPendingMatchCount, 30000)
+    return () => clearInterval(interval)
+  }, [authUser])
+
+  useEffect(() => {
+    const syncRouteFromPath = () => {
+      const path = window.location.pathname
+      const matchDetail = path.match(/^\/matches\/([^/]+)$/)
+
+      if (path === '/matches') {
+        setCurrentPage('matches')
+        setSelectedMatchId(null)
+        return
+      }
+
+      if (matchDetail) {
+        setCurrentPage('match-detail')
+        setSelectedMatchId(matchDetail[1])
+        return
+      }
+
+      setSelectedMatchId(null)
+      setCurrentPage('home')
+    }
+
+    syncRouteFromPath()
+    window.addEventListener('popstate', syncRouteFromPath)
+
+    return () => window.removeEventListener('popstate', syncRouteFromPath)
+  }, [])
+
   const handleLoginClick = () => {
     setCurrentPage('login')
   }
@@ -106,13 +171,44 @@ function App() {
   }
 
   const handleAvatarClick = () => {
+    if (window.location.pathname.startsWith('/matches')) {
+      window.history.pushState({}, '', '/')
+    }
+
+    setSelectedMatchId(null)
+
     if (authUser) {
       setCurrentPage('profile')
     }
   }
 
+  const handleMatchesClick = () => {
+    window.history.pushState({}, '', '/matches')
+    setSelectedReportId(null)
+    setSelectedMatchId(null)
+    setCurrentPage('matches')
+  }
+
+  const handleViewMatch = (matchId) => {
+    window.history.pushState({}, '', `/matches/${matchId}`)
+    setSelectedReportId(null)
+    setSelectedMatchId(matchId)
+    setCurrentPage('match-detail')
+  }
+
+  const handleBackFromMatchDetail = () => {
+    window.history.pushState({}, '', '/matches')
+    setSelectedMatchId(null)
+    setCurrentPage('matches')
+  }
+
   const handleNotificationClick = () => {
     // default simple click (no payload) navigates to profile
+    if (window.location.pathname.startsWith('/matches')) {
+      window.history.pushState({}, '', '/')
+    }
+
+    setSelectedMatchId(null)
     setCurrentPage('profile')
     setProfileInitialTab(null)
     setProfileHighlightClaimId(null)
@@ -134,6 +230,11 @@ function App() {
     }
 
     // If notification references a report, navigate to report detail
+    if (payload.matchId) {
+      handleViewMatch(payload.matchId)
+      return
+    }
+
     if (payload.reportId) {
       setSelectedReportId(payload.reportId)
       setCurrentPage('report-detail')
@@ -156,17 +257,32 @@ function App() {
       }
     }
     setCurrentPage('profile')
-    }
+  }
 
   const handleHomeClick = () => {
+    if (window.location.pathname.startsWith('/matches')) {
+      window.history.pushState({}, '', '/')
+    }
+
+    setSelectedMatchId(null)
     setCurrentPage('home')
   }
 
   const handleReportItemClick = () => {
+    if (window.location.pathname.startsWith('/matches')) {
+      window.history.pushState({}, '', '/')
+    }
+
+    setSelectedMatchId(null)
     setCurrentPage('report')
   }
 
   const handleBrowseClick = () => {
+    if (window.location.pathname.startsWith('/matches')) {
+      window.history.pushState({}, '', '/')
+    }
+
+    setSelectedMatchId(null)
     setCurrentPage('browse')
   }
 
@@ -181,8 +297,13 @@ function App() {
   }
 
   const handleSignOut = () => {
+    if (window.location.pathname.startsWith('/matches')) {
+      window.history.pushState({}, '', '/')
+    }
+
     localStorage.removeItem('accessToken')
     setAuthUser(null)
+    setSelectedMatchId(null)
     setCurrentPage('home')
   }
 
@@ -215,11 +336,12 @@ function App() {
         authUser={authUser}
         onHome={handleHomeClick}
         onBrowse={handleBrowseClick}
-        onMatches={handleBrowseClick}
+        onMatches={handleMatchesClick}
         onReportItem={handleReportItemClick}
         onSignOut={handleSignOut}
         onAvatarClick={handleAvatarClick}
         unreadNotifications={unreadNotifications}
+        pendingMatchCount={pendingMatchCount}
         onNotificationClick={handleNotificationClickPayload}
         initialTab={profileInitialTab}
         highlightClaimId={profileHighlightClaimId}
@@ -230,10 +352,11 @@ function App() {
         authUser={authUser} 
         onHome={handleHomeClick} 
         onBrowse={handleBrowseClick}
-        onMatches={handleBrowseClick}
+        onMatches={handleMatchesClick}
         onReportItem={handleReportItemClick}
         onBack={handleHomeClick}
         unreadNotifications={unreadNotifications}
+        pendingMatchCount={pendingMatchCount}
         onNotificationClick={handleNotificationClickPayload}
       />
     ) : currentPage === 'browse' ? (
@@ -241,10 +364,12 @@ function App() {
         authUser={authUser}
         onHome={handleHomeClick}
         onBrowse={handleBrowseClick}
+        onMatches={handleMatchesClick}
         onReportItem={handleReportItemClick}
         onAvatarClick={handleAvatarClick}
         onViewReport={handleViewReport}
         unreadNotifications={unreadNotifications}
+        pendingMatchCount={pendingMatchCount}
         onNotificationClick={handleNotificationClickPayload}
       />
     ) : currentPage === 'report-detail' ? (
@@ -252,12 +377,84 @@ function App() {
         authUser={authUser}
         onHome={handleHomeClick}
         onBrowse={handleBrowseClick}
-        onMatches={handleBrowseClick}
+        onMatches={handleMatchesClick}
         onReportItem={handleReportItemClick}
         onBack={handleBackFromReportDetail}
         reportId={selectedReportId}
         unreadNotifications={unreadNotifications}
+        pendingMatchCount={pendingMatchCount}
         onNotificationClick={handleNotificationClickPayload}
+      />
+    ) : currentPage === 'matches' ? (
+      <MatchesPage
+        authUser={authUser}
+        onHome={handleHomeClick}
+        onBrowse={handleBrowseClick}
+        onMatches={handleMatchesClick}
+        onReportItem={handleReportItemClick}
+        onAvatarClick={handleAvatarClick}
+        unreadNotifications={unreadNotifications}
+        pendingMatchCount={pendingMatchCount}
+        onNotificationClick={handleNotificationClickPayload}
+        onViewMatch={handleViewMatch}
+        onBack={handleHomeClick}
+        onMatchesUpdated={() => {
+          const refreshPendingMatchCount = async () => {
+            try {
+              const token = localStorage.getItem('accessToken')
+              const response = await fetch('/api/matches', {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${token}` },
+              })
+
+              if (!response.ok) return
+
+              const data = await response.json()
+              const matches = Array.isArray(data.matches) ? data.matches : []
+              setPendingMatchCount(matches.filter((match) => match.status === 'pending').length)
+            } catch (error) {
+              console.error('Error refreshing pending matches:', error)
+            }
+          }
+
+          refreshPendingMatchCount()
+        }}
+      />
+    ) : currentPage === 'match-detail' ? (
+      <MatchesPage
+        authUser={authUser}
+        onHome={handleHomeClick}
+        onBrowse={handleBrowseClick}
+        onMatches={handleMatchesClick}
+        onReportItem={handleReportItemClick}
+        onAvatarClick={handleAvatarClick}
+        unreadNotifications={unreadNotifications}
+        pendingMatchCount={pendingMatchCount}
+        onNotificationClick={handleNotificationClickPayload}
+        matchId={selectedMatchId}
+        onViewMatch={handleViewMatch}
+        onBack={handleBackFromMatchDetail}
+        onMatchesUpdated={() => {
+          const refreshPendingMatchCount = async () => {
+            try {
+              const token = localStorage.getItem('accessToken')
+              const response = await fetch('/api/matches', {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${token}` },
+              })
+
+              if (!response.ok) return
+
+              const data = await response.json()
+              const matches = Array.isArray(data.matches) ? data.matches : []
+              setPendingMatchCount(matches.filter((match) => match.status === 'pending').length)
+            } catch (error) {
+              console.error('Error refreshing pending matches:', error)
+            }
+          }
+
+          refreshPendingMatchCount()
+        }}
       />
     ) : (
       <HomePage
@@ -265,10 +462,12 @@ function App() {
         onSignup={handleSignupClick}
         onReportItem={handleReportItemClick}
         onBrowse={handleBrowseClick}
+        onMatches={handleMatchesClick}
         onAvatarClick={handleAvatarClick}
         onHome={handleHomeClick}
         authUser={authUser}
         unreadNotifications={unreadNotifications}
+        pendingMatchCount={pendingMatchCount}
         onNotificationClick={handleNotificationClickPayload}
       />
     )

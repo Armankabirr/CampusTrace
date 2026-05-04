@@ -9,18 +9,23 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['claim_received', 'claim_accepted', 'claim_rejected', 'claim_pending_approval'],
+      enum: ['claim_received', 'claim_accepted', 'claim_rejected', 'claim_pending_approval', 'match_found'],
       required: true,
     },
     claimId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Claim',
-      required: true,
+      default: null,
     },
     reportId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Report',
-      required: true,
+      default: null,
+    },
+    matchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Match',
+      default: null,
     },
     message: {
       type: String,

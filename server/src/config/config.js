@@ -34,6 +34,7 @@ const config = {
   uploadMaxFileSizeBytes: Number(process.env.UPLOAD_MAX_FILE_SIZE_MB || 10) * 1024 * 1024,
   cookieSecure: process.env.COOKIE_SECURE === 'true',
   cookieDomain: process.env.COOKIE_DOMAIN || undefined,
+  clientBaseUrl: process.env.CLIENT_BASE_URL || process.env.BASE_URL || 'http://localhost:5173',
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
   googleRefreshToken: process.env.GOOGLE_REFRESH_TOKEN,

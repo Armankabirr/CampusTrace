@@ -1,5 +1,6 @@
 import Report from '../models/report.model.js';
 import { uploadImageToImageKit, deleteImageFromImageKit } from '../services/imagekit.service.js';
+import { findMatches } from '../services/matchingService.js';
 
 export const createReport = async (req, res) => {
   try {
@@ -113,6 +114,10 @@ export const createReport = async (req, res) => {
       contactEmail: normalizedContactEmail,
       contactPhone: normalizedContactPhone,
       verificationDetails: normalizedVerificationDetails,
+    });
+
+    findMatches(report).catch((error) => {
+      console.error('Matching error:', error);
     });
 
     return res.status(201).json({

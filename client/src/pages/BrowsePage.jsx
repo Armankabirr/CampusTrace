@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 
-function BrowsePage({ authUser, onHome, onBrowse, onReportItem, onAvatarClick, onViewReport, unreadNotifications, onNotificationClick }) {
+function BrowsePage({ authUser, onHome, onBrowse, onMatches, onReportItem, onAvatarClick, onViewReport, unreadNotifications, pendingMatchCount, onNotificationClick }) {
   const [reports, setReports] = useState([])
   const [filteredReports, setFilteredReports] = useState([])
   const [loading, setLoading] = useState(true)
@@ -94,12 +94,13 @@ function BrowsePage({ authUser, onHome, onBrowse, onReportItem, onAvatarClick, o
         activePage="browse"
         onHome={onHome}
         onBrowse={onBrowse}
-        onMatches={onHome}
+        onMatches={onMatches || onHome}
         onLogin={onHome}
         onSignup={onHome}
         onAvatarClick={onAvatarClick}
         onReportItem={onReportItem}
         unreadNotifications={unreadNotifications}
+        pendingMatchCount={pendingMatchCount}
         onNotificationClick={onNotificationClick}
       />
 

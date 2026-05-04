@@ -42,7 +42,7 @@ const reasons = [
   'Real-time Notifications',
 ]
 
-function HomePage({ onLogin, onSignup, onReportItem, onAvatarClick, authUser, onHome, onBrowse, unreadNotifications, onNotificationClick }) {
+function HomePage({ onLogin, onSignup, onReportItem, onAvatarClick, authUser, onHome, onBrowse, onMatches, unreadNotifications, pendingMatchCount, onNotificationClick }) {
   const [parallaxY, setParallaxY] = useState(0)
 
   useEffect(() => {
@@ -77,12 +77,13 @@ function HomePage({ onLogin, onSignup, onReportItem, onAvatarClick, authUser, on
         activePage="home"
         onHome={onHome}
         onBrowse={onBrowse}
-        onMatches={onHome}
+        onMatches={onMatches || onHome}
         onLogin={onLogin}
         onSignup={onSignup}
         onAvatarClick={onAvatarClick}
         onReportItem={onReportItem}
         unreadNotifications={unreadNotifications}
+        pendingMatchCount={pendingMatchCount}
         onNotificationClick={onNotificationClick}
       />
 
