@@ -7,15 +7,29 @@ import notificationRoutes from './routes/notification.route.js';
 
 const app = express();
 
+const allowedOrigins = new Set([
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:5176',
+]);
+
 // CORS middleware - must be before routes
 const corsMiddleware = (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const requestOrigin = req.get('origin');
+
+  if (requestOrigin && allowedOrigins.has(requestOrigin)) {
+    res.header('Access-Control-Allow-Origin', requestOrigin);
+    res.header('Vary', 'Origin');
+  }
+
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
   
   // Handle preflight
   if (req.method === 'OPTIONS') {
-    return res.send();
+    return res.status(204).send();
   }
   
   next();

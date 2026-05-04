@@ -84,6 +84,8 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
   const [claimActionLoading, setClaimActionLoading] = useState({})
   const [claimerFeedbackLoading, setClaimerFeedbackLoading] = useState({})
   const [reporterFeedbackLoading, setReporterFeedbackLoading] = useState({})
+  const [claimerFeedbackSuccess, setClaimerFeedbackSuccess] = useState({})
+  const [reporterFeedbackSuccess, setReporterFeedbackSuccess] = useState({})
   const [claimerFeedbackForm, setClaimerFeedbackForm] = useState({})
   const [reporterFeedbackForm, setReporterFeedbackForm] = useState({})
 
@@ -471,6 +473,10 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
 
       const data = await response.json()
       setUserClaims((prev) => prev.map((c) => (c._id === claimId ? { ...c, ...data.claim } : c)))
+      setClaimerFeedbackSuccess((prev) => ({
+        ...prev,
+        [claimId]: 'Confirmation and review saved successfully.',
+      }))
     } catch (err) {
       console.error('Claimer feedback error:', err)
       window.alert(err.message || 'Failed to submit feedback')
@@ -506,6 +512,10 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
 
       const data = await response.json()
       setClaimsOnMyItems((prev) => prev.map((c) => (c._id === claimId ? { ...c, ...data.claim } : c)))
+      setReporterFeedbackSuccess((prev) => ({
+        ...prev,
+        [claimId]: 'Review saved successfully.',
+      }))
     } catch (err) {
       console.error('Reporter feedback error:', err)
       window.alert(err.message || 'Failed to submit review')
@@ -961,12 +971,21 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                               </div>
                               <button
                                 type="button"
-                                disabled={Boolean(claimerFeedbackLoading[claim._id])}
+                                disabled={Boolean(claimerFeedbackLoading[claim._id] || claimerFeedbackSuccess[claim._id])}
                                 onClick={() => handleSubmitClaimerFeedback(claim._id)}
-                                className="mt-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+                                className="mt-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                {claimerFeedbackLoading[claim._id] ? 'Saving...' : 'Submit Confirmation & Review'}
+                                {claimerFeedbackLoading[claim._id]
+                                  ? 'Saving...'
+                                  : claimerFeedbackSuccess[claim._id]
+                                    ? 'Saved'
+                                    : 'Submit Confirmation & Review'}
                               </button>
+                              {claimerFeedbackSuccess[claim._id] && (
+                                <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+                                  {claimerFeedbackSuccess[claim._id]}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1217,12 +1236,21 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                           </div>
                           <button
                             type="button"
-                            disabled={Boolean(reporterFeedbackLoading[claim._id])}
+                            disabled={Boolean(reporterFeedbackLoading[claim._id] || reporterFeedbackSuccess[claim._id])}
                             onClick={() => handleSubmitReporterFeedback(claim._id)}
-                            className="mt-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
+                            className="mt-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            {reporterFeedbackLoading[claim._id] ? 'Saving...' : 'Submit Reporter Review'}
+                            {reporterFeedbackLoading[claim._id]
+                              ? 'Saving...'
+                              : reporterFeedbackSuccess[claim._id]
+                                ? 'Saved'
+                                : 'Submit Reporter Review'}
                           </button>
+                          {reporterFeedbackSuccess[claim._id] && (
+                            <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+                              {reporterFeedbackSuccess[claim._id]}
+                            </div>
+                          )}
                         </div>
                       )}
                     </article>
