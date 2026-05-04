@@ -30,6 +30,19 @@ const claimSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // Optional evidence shared by the person claiming they found the lost item
+    foundItemDescription: {
+      type: String,
+      default: null,
+    },
+    foundItemImageUrl: {
+      type: String,
+      default: null,
+    },
+    foundItemImageFileId: {
+      type: String,
+      default: null,
+    },
     // For found items: array of answers provided by claimer
     answersProvided: [
       {

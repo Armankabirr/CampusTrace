@@ -8,6 +8,7 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotificati
   const [error, setError] = useState(null)
   const [showVerificationView, setShowVerificationView] = useState(false)
   const [claimData, setClaimData] = useState({})
+  const [claimPhoto, setClaimPhoto] = useState(null)
   const [submittingClaim, setSubmittingClaim] = useState(false)
   const [claimMessage, setClaimMessage] = useState('')
 
@@ -35,7 +36,8 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotificati
       setShowVerificationView(false)
 
       if (data.report.itemType === 'lost') {
-        setClaimData({ secretIdentifier: '' })
+        setClaimData({ secretIdentifier: '', description: '' })
+        setClaimPhoto(null)
       } else {
         const answerObj = {}
         const proofQuestions = data.report.verificationDetails?.proofQuestions || []
@@ -43,6 +45,7 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotificati
           answerObj[`answer${idx}`] = ''
         })
         setClaimData(answerObj)
+        setClaimPhoto(null)
       }
     } catch (err) {
       setError(err.message)
@@ -54,6 +57,11 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotificati
 
   const handleClaimChange = (field, value) => {
     setClaimData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleClaimPhotoChange = (event) => {
+    const file = event.target.files?.[0] || null
+    setClaimPhoto(file)
   }
 
   const openVerificationView = () => {
@@ -76,24 +84,47 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotificati
         throw new Error('Please sign in to verify this item')
       }
 
-      const claimPayload = { reportId }
+      const useMultipart = isLostItem
+      const claimPayload = useMultipart ? new FormData() : { reportId }
+
+      if (useMultipart) {
+        claimPayload.append('reportId', reportId)
+        claimPayload.append('secretIdentifierProvided', claimData.secretIdentifier || '')
+        claimPayload.append('description', claimData.description || '')
+
+        if (claimPhoto) {
+          claimPayload.append('photo', claimPhoto)
+        }
+      }
+
       if (report.itemType?.toLowerCase() === 'found') {
         const answers = []
         report.verificationDetails.proofQuestions.forEach((_, idx) => {
           answers.push(claimData[`answer${idx}`])
         })
         claimPayload.answersProvided = answers
-      } else {
+      } else if (!useMultipart) {
         claimPayload.secretIdentifierProvided = claimData.secretIdentifier
       }
 
+      const requestInit = useMultipart
+        ? {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: claimPayload,
+          }
+        : {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify(claimPayload),
+          }
+
       const response = await fetch('/api/claims/create', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(claimPayload),
+        ...requestInit,
       })
 
       const text = await response.text()
@@ -328,6 +359,27 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotificati
                               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                               required
                             />
+                            <label className="block text-sm font-medium text-slate-700 mb-2 mt-4">
+                              Optional Description
+                            </label>
+                            <textarea
+                              value={claimData.description || ''}
+                              onChange={(e) => handleClaimChange('description', e.target.value)}
+                              placeholder="Share details that help the reporter confirm you found it"
+                              className="w-full min-h-28 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            />
+                            <label className="block text-sm font-medium text-slate-700 mb-2 mt-4">
+                              Optional Photo
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleClaimPhotoChange}
+                              className="w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:font-medium file:text-brand-700 hover:file:bg-brand-100"
+                            />
+                            {claimPhoto && (
+                              <p className="mt-2 text-xs text-slate-500">Selected: {claimPhoto.name}</p>
+                            )}
                           </div>
                         ) : (
                           proofQuestions.map((question, idx) => (
@@ -353,7 +405,7 @@ function ReportDetailPage({ authUser, onHome, onBack, reportId, unreadNotificati
                             disabled={submittingClaim}
                             className="flex-1 py-2 px-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-medium transition disabled:opacity-50"
                           >
-                            {submittingClaim ? 'Verifying...' : 'Verify'}
+                            {submittingClaim ? 'Submitting...' : isLostItem ? 'Submit Claim' : 'Verify'}
                           </button>
                           <button
                             type="button"

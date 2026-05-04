@@ -1,11 +1,13 @@
 import Claim from '../models/claim.model.js';
 import Report from '../models/report.model.js';
 import Notification from '../models/notification.model.js';
+import { uploadImageToImageKit } from '../services/imagekit.service.js';
 
 export const createClaim = async (req, res) => {
   try {
-    const { reportId, secretIdentifierProvided, answersProvided } = req.body;
+    const { reportId, secretIdentifierProvided, answersProvided, description } = req.body;
     const userId = req.user._id;
+    const attachmentFile = req.file;
 
     // Validate reportId
     if (!reportId) {
@@ -42,6 +44,18 @@ export const createClaim = async (req, res) => {
         return res.status(400).json({ message: 'Secret identifier is required.' });
       }
 
+      let foundItemImageUrl = null;
+      let foundItemImageFileId = null;
+
+      if (attachmentFile) {
+        const uploadResult = await uploadImageToImageKit(
+          attachmentFile,
+          `claim-found-${reportId}-${Date.now()}`
+        );
+        foundItemImageUrl = uploadResult.url;
+        foundItemImageFileId = uploadResult.fileId;
+      }
+
       // Verify the secret identifier
       const correctIdentifier = report.verificationDetails?.privateIdentifier?.toLowerCase();
       const providedIdentifier = secretIdentifierProvided.trim().toLowerCase();
@@ -56,29 +70,28 @@ export const createClaim = async (req, res) => {
         claimerPhone: req.user.phone,
         claimerName: req.user.name,
         secretIdentifierProvided,
+        foundItemDescription: description ? String(description).trim() : null,
+        foundItemImageUrl,
+        foundItemImageFileId,
         isVerified,
-        status: isVerified ? 'verified' : 'rejected',
+        status: 'pending',
         verificationMessage: isVerified
-          ? 'Your secret identifier matches! Item owner has been notified.'
-          : 'The secret identifier does not match. Please check and try again.',
+          ? 'Your secret identifier matches. The reporter will review your claim.'
+          : 'Your claim has been submitted. The reporter will review the information you provided.',
       });
 
-      // Create notification for report owner if identifier matches (lost item found!)
-      if (isVerified) {
-        await Notification.create({
-          userId: report.userId._id,
-          type: 'claim_received',
-          claimId: claim._id,
-          reportId,
-          message: `${req.user.name} found your lost item "${report.title}"! They provided the correct identifier. You can now contact them to retrieve your item.`,
-          relatedUserId: userId,
-        });
-      }
+      // Always let the reporter decide whether to accept or reject a lost-item claim
+      await Notification.create({
+        userId: report.userId._id,
+        type: 'claim_pending_approval',
+        claimId: claim._id,
+        reportId,
+        message: `${req.user.name} submitted a claim for your lost item "${report.title}". ${isVerified ? 'Their secret identifier matches your record.' : 'Please review the evidence and decide whether to accept or reject the claim.'}`,
+        relatedUserId: userId,
+      });
 
       return res.status(201).json({
-        message: isVerified
-          ? 'Claim verified successfully! Item owner has been notified.'
-          : 'The provided identifier does not match.',
+        message: 'Claim submitted successfully! The item owner will review it.',
         claim,
       });
     } else if (report.itemType === 'found') {
@@ -128,7 +141,7 @@ export const createClaim = async (req, res) => {
         type: 'claim_pending_approval',
         claimId: claim._id,
         reportId,
-        message: `${req.user.name} has claimed your found item "${report.title}". ${allCorrect ? 'Their answers to your verification questions are correct.' : 'Their answers may not match your verification answers.'} Please review the claim.`,
+        message: `${req.user.name} has claimed your lost item "${report.title}". ${allCorrect ? 'Their answers to your verification questions are correct.' : 'Their answers may not match your verification answers.'} Please review the claim.`,
         relatedUserId: userId,
       });
 

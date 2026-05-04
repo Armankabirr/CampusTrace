@@ -1173,9 +1173,26 @@ function ProfilePage({ authUser, onHome, onReportItem, onSignOut, onAvatarClick,
                                   </div>
                                 ))
                               ) : claim.reportInfo?.itemType === 'lost' ? (
-                                <div className="rounded-md border border-slate-100 bg-slate-50 p-3">
-                                  <p className="text-[13px] font-semibold text-slate-700">Secret identifier provided</p>
-                                  <p className="mt-1 text-sm text-slate-600">{claim.secretIdentifierProvided || 'N/A'}</p>
+                                <div className="space-y-3">
+                                  <div className="rounded-md border border-slate-100 bg-slate-50 p-3">
+                                    <p className="text-[13px] font-semibold text-slate-700">Secret identifier provided</p>
+                                    <p className="mt-1 text-sm text-slate-600">{claim.secretIdentifierProvided || 'N/A'}</p>
+                                  </div>
+                                  {claim.foundItemDescription && (
+                                    <div className="rounded-md border border-slate-100 bg-slate-50 p-3">
+                                      <p className="text-[13px] font-semibold text-slate-700">Claimer description</p>
+                                      <p className="mt-1 text-sm text-slate-600 whitespace-pre-line">{claim.foundItemDescription}</p>
+                                    </div>
+                                  )}
+                                  {claim.foundItemImageUrl && (
+                                    <div className="overflow-hidden rounded-md border border-slate-100 bg-white">
+                                      <img
+                                        src={claim.foundItemImageUrl}
+                                        alt="Evidence uploaded by claimer"
+                                        className="h-56 w-full object-cover"
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <p className="text-sm text-slate-500">No verification details available.</p>
