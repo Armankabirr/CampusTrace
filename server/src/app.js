@@ -7,21 +7,14 @@ import notificationRoutes from './routes/notification.route.js';
 
 const app = express();
 
-console.log('[APP.JS] Initializing app with CORS middleware');
-
 // CORS middleware - must be before routes
 const corsMiddleware = (req, res, next) => {
-  console.log(`[CORS REQUEST] ${req.method} ${req.path} from ${req.get('origin')}`);
-  
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   
-  console.log(`[CORS HEADERS] Set CORS headers for ${req.method} ${req.path}`);
-  
   // Handle preflight
   if (req.method === 'OPTIONS') {
-    console.log(`[CORS] Sending 200 OK for OPTIONS request`);
     return res.send();
   }
   
@@ -41,18 +34,14 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/claims', claimRoutes);
 app.use('/api/notifications', notificationRoutes);
 
-// Catch-all for debugging
+// Catch-all for 404
 app.use((req, res) => {
-  console.log(`[CATCH-ALL] ${req.method} ${req.path} - No matching route`);
   res.status(404).json({
-    message: `No route found for ${req.method} ${req.path}`,
-    path: req.path,
-    method: req.method
+    message: `No route found for ${req.method} ${req.path}`
   });
 });
 
 app.use((error, req, res, next) => {
-	console.log(`[ERROR HANDLER] Error:`, error.message);
 	if (error?.code === 'LIMIT_FILE_SIZE') {
 		return res.status(413).json({ message: 'Uploaded file is too large.' });
 	}
