@@ -9,9 +9,10 @@ import BrowsePage from './pages/BrowsePage'
 import ReportDetailPage from './pages/ReportDetailPage'
 import MatchesPage from './pages/MatchesPage'
 import Sign from './pages/Sign'
+import AdminDashboardPage from './pages/AdminDashboardPage'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'forgot-password', 'profile', 'report', 'browse', 'report-detail'
+  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'forgot-password', 'profile', 'report', 'browse', 'report-detail', 'admin-dashboard'
   const [prefilledLoginEmail, setPrefilledLoginEmail] = useState('')
   const [authUser, setAuthUser] = useState(null)
   const [selectedReportId, setSelectedReportId] = useState(null)
@@ -44,7 +45,9 @@ function App() {
         }
 
         const data = await response.json()
-        setAuthUser(data.user || null)
+        const restoredUser = data.user || null
+        setAuthUser(restoredUser)
+        setCurrentPage(restoredUser?.role === 'admin' ? 'admin-dashboard' : 'home')
       } catch {
         localStorage.removeItem('accessToken')
       }
@@ -167,7 +170,7 @@ function App() {
 
   const handleLoginSuccess = (user) => {
     setAuthUser(user)
-    setCurrentPage('home')
+    setCurrentPage(user?.role === 'admin' ? 'admin-dashboard' : 'home')
   }
 
   const handleAvatarClick = () => {
@@ -178,7 +181,7 @@ function App() {
     setSelectedMatchId(null)
 
     if (authUser) {
-      setCurrentPage('profile')
+      setCurrentPage(authUser.role === 'admin' ? 'admin-dashboard' : 'profile')
     }
   }
 
@@ -276,7 +279,7 @@ function App() {
     }
 
     setSelectedMatchId(null)
-    setCurrentPage('home')
+    setCurrentPage(authUser?.role === 'admin' ? 'admin-dashboard' : 'home')
   }
 
   const handleReportItemClick = () => {
@@ -342,6 +345,8 @@ function App() {
       />
     ) : currentPage === 'signup' ? (
       <Sign onBack={handleBackClick} onSwitchToLogin={handleSignupComplete} />
+    ) : currentPage === 'admin-dashboard' ? (
+      <AdminDashboardPage authUser={authUser} onSignOut={handleSignOut} />
     ) : currentPage === 'profile' ? (
       <ProfilePage
         authUser={authUser}

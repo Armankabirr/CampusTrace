@@ -1,0 +1,11 @@
+{
+  "name": "campustrace",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node -e \"console.log('Use two terminals: npm --prefix client run dev and npm --prefix server run dev')\"",
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev"
+  }
+}

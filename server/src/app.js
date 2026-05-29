@@ -5,6 +5,7 @@ import reportRoutes from './routes/report.route.js';
 import claimRoutes from './routes/claim.route.js';
 import notificationRoutes from './routes/notification.route.js';
 import matchRoutes from './routes/matches.route.js';
+import adminRoutes from './routes/admin.route.js';
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/claims', claimRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/matches', matchRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Catch-all for 404
 app.use((req, res) => {

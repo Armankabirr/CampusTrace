@@ -74,9 +74,10 @@ npm install
 
 3. Configure environment variables (see below)
 
-4. Start development servers (two terminals)
+4. Start development servers in two terminals
 
 Frontend:
+
 ```bash
 cd client
 npm run dev
@@ -85,10 +86,7 @@ npm run dev
 Backend:
 ```bash
 cd server
-# Use nodemon for auto-reload if available
 npm run dev
-# or
-node server.js
 ```
 
 Open the frontend URL reported by Vite (usually http://localhost:5173) and ensure the backend is running on the configured port (default commonly `http://localhost:3000`).
