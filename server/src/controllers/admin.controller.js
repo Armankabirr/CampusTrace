@@ -3,6 +3,8 @@ import Report from '../models/report.model.js';
 import Claim from '../models/claim.model.js';
 import Match from '../models/match.model.js';
 import Notification from '../models/notification.model.js';
+import AuditLog from '../models/auditLog.model.js';
+import FraudReport from '../models/fraudReport.model.js';
 
 const STATUS_FIELDS = {
   report: ['active', 'matched', 'resolved', 'archived'],
@@ -22,6 +24,8 @@ const serializeUser = (user) => ({
   email: user.email,
   role: user.role,
   studentId: user.studentId,
+  accountStatus: user.accountStatus,
+  lastLoginAt: user.lastLoginAt,
   createdAt: user.createdAt,
 });
 
@@ -107,6 +111,25 @@ const serializeNotification = (notification) => ({
     : null,
 });
 
+const serializeAuditLog = (log) => ({
+  id: log._id,
+  action: log.action,
+  targetType: log.targetType,
+  targetId: log.targetId,
+  summary: log.summary,
+  severity: log.severity,
+  changes: log.changes,
+  createdAt: log.createdAt,
+  actor: log.actorUserId
+    ? {
+        id: log.actorUserId._id,
+        name: log.actorUserId.name,
+        email: log.actorUserId.email,
+        role: log.actorUserId.role,
+      }
+    : null,
+});
+
 const countByField = async (model, field, allowedValues) => {
   const rows = await model.aggregate([{ $group: { _id: `$${field}`, count: { $sum: 1 } } }]);
   const counts = mapCounts(rows);
@@ -114,17 +137,24 @@ const countByField = async (model, field, allowedValues) => {
   return allowedValues.map((value) => ({ value, count: counts[value] || 0 }));
 };
 
+const ROLE_FIELDS = ['student', 'moderator', 'fraud_investigator', 'admin', 'super_admin'];
+const ACCOUNT_STATUS_FIELDS = ['active', 'suspended', 'deleted'];
+
 export const getDashboardSummary = async (req, res) => {
   try {
     const [
       totalUsers,
-      studentUsers,
-      adminUsers,
+      activeUsers,
+      roleCounts,
+      accountStatusCounts,
       totalReports,
       totalClaims,
       totalMatches,
       totalNotifications,
       unreadNotifications,
+      totalAuditLogs,
+      totalFraudReports,
+      openFraudReports,
       reportStatusCounts,
       claimStatusCounts,
       matchStatusCounts,
@@ -137,8 +167,9 @@ export const getDashboardSummary = async (req, res) => {
       reportCategoryRows,
     ] = await Promise.all([
       User.countDocuments(),
-      User.countDocuments({ role: 'student' }),
-      User.countDocuments({ role: 'admin' }),
+      User.countDocuments({ accountStatus: 'active' }),
+      countByField(User, 'role', ROLE_FIELDS),
+      countByField(User, 'accountStatus', ACCOUNT_STATUS_FIELDS),
       Report.countDocuments(),
       Claim.countDocuments(),
       Match.countDocuments(),
@@ -170,6 +201,13 @@ export const getDashboardSummary = async (req, res) => {
         .sort({ createdAt: -1 })
         .limit(8)
         .lean(),
+      AuditLog.find()
+        .populate('actorUserId', 'name email role')
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .lean(),
+      FraudReport.countDocuments(),
+      FraudReport.countDocuments({ status: 'open' }),
       countByField(Report, 'itemType', ['lost', 'found']),
       Report.aggregate([
         { $group: { _id: '$category', count: { $sum: 1 } } },
@@ -182,8 +220,9 @@ export const getDashboardSummary = async (req, res) => {
       metrics: {
         users: {
           total: totalUsers,
-          students: studentUsers,
-          admins: adminUsers,
+          active: activeUsers,
+          byRole: roleCounts,
+          byStatus: accountStatusCounts,
         },
         reports: {
           total: totalReports,
@@ -202,6 +241,13 @@ export const getDashboardSummary = async (req, res) => {
           total: totalNotifications,
           unread: unreadNotifications,
         },
+        auditLogs: {
+          total: totalAuditLogs,
+        },
+        fraudReports: {
+          total: totalFraudReports,
+          open: openFraudReports,
+        },
       },
       recent: {
         users: recentUsers.map(serializeUser),
@@ -209,6 +255,7 @@ export const getDashboardSummary = async (req, res) => {
         claims: recentClaims.map(serializeClaim),
         matches: recentMatches.map(serializeMatch),
         notifications: recentNotifications.map(serializeNotification),
+        activities: recentAuditLogs.map(serializeAuditLog),
       },
       topCategories: reportCategoryRows,
     });

@@ -50,8 +50,29 @@ const userSchema = new mongoose.Schema(
 		},
 		role: {
 			type: String,
-			enum: ['student', 'admin'],
+			enum: ['student', 'moderator', 'fraud_investigator', 'admin', 'super_admin'],
 			default: 'student',
+		},
+		accountStatus: {
+			type: String,
+			enum: ['active', 'suspended', 'deleted'],
+			default: 'active',
+		},
+		lastLoginAt: {
+			type: Date,
+			default: null,
+		},
+		suspendedAt: {
+			type: Date,
+			default: null,
+		},
+		suspensionReason: {
+			type: String,
+			default: null,
+		},
+		deletedAt: {
+			type: Date,
+			default: null,
 		},
 	},
 	{ timestamps: true }

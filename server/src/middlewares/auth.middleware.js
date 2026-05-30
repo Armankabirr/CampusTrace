@@ -1,6 +1,8 @@
 import User from '../models/user.model.js';
 import { verifyToken } from '../utils/utils.js';
 
+const ADMIN_ROLES = ['admin', 'super_admin', 'moderator', 'fraud_investigator'];
+
 export const requireAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || '';
@@ -17,6 +19,15 @@ export const requireAuth = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found.' });
     }
 
+    if (user.accountStatus && user.accountStatus !== 'active') {
+      return res.status(403).json({
+        message:
+          user.accountStatus === 'suspended'
+            ? 'Your account has been suspended.'
+            : 'Your account is no longer active.',
+      });
+    }
+
     req.user = user;
     return next();
   } catch (error) {
@@ -25,9 +36,19 @@ export const requireAuth = async (req, res, next) => {
 };
 
 export const requireAdmin = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
+  if (!ADMIN_ROLES.includes(req.user?.role)) {
     return res.status(403).json({ message: 'Admin access required.' });
   }
 
   return next();
 };
+
+export const requireRole = (...roles) => (req, res, next) => {
+  if (!roles.includes(req.user?.role)) {
+    return res.status(403).json({ message: 'You do not have permission to access this resource.' });
+  }
+
+  return next();
+};
+
+export const adminRoles = ADMIN_ROLES;

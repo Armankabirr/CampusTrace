@@ -6,6 +6,11 @@
 
 :root {
 	font-family: 'Sora', sans-serif;
+	color-scheme: light;
+}
+
+html.dark {
+	color-scheme: dark;
 }
 
 html,
@@ -17,6 +22,10 @@ body,
 
 body {
 	background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 60%, #eef2f7 100%);
+}
+
+html.dark body {
+	background: linear-gradient(180deg, #020617 0%, #0f172a 60%, #111827 100%);
 }
 
 .font-sora {

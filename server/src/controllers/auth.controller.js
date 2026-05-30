@@ -171,6 +171,15 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials.' });
     }
 
+    if (user.accountStatus && user.accountStatus !== 'active') {
+      return res.status(403).json({
+        message:
+          user.accountStatus === 'suspended'
+            ? 'Your account has been suspended.'
+            : 'Your account is no longer active.',
+      });
+    }
+
     const payload = buildTokenPayload(user);
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
@@ -182,6 +191,10 @@ export const login = async (req, res) => {
       ip: req.ip,
       userAgent: req.get('user-agent') || null,
       expiresAt: parseRefreshExpiryDate(),
+    });
+
+    await User.findByIdAndUpdate(user._id, {
+      lastLoginAt: new Date(),
     });
 
     res.cookie('refreshToken', refreshToken, refreshTokenCookieOptions());
@@ -286,6 +299,17 @@ export const refreshToken = async (req, res) => {
       session.revoked = true;
       await session.save();
       return res.status(401).json({ message: 'User not found.' });
+    }
+
+    if (user.accountStatus && user.accountStatus !== 'active') {
+      session.revoked = true;
+      await session.save();
+      return res.status(403).json({
+        message:
+          user.accountStatus === 'suspended'
+            ? 'Your account has been suspended.'
+            : 'Your account is no longer active.',
+      });
     }
 
     const nextPayload = buildTokenPayload(user);
