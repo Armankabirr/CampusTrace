@@ -13,6 +13,15 @@ const navigationItems = [
   { id: 'settings', label: 'Settings' },
 ]
 
+function formatDate(value) {
+  if (!value) return 'Just now'
+  try {
+    return new Date(value).toLocaleString()
+  } catch {
+    return String(value)
+  }
+}
+
 function AdminDashboardPage({ authUser, onSignOut }) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -39,7 +48,7 @@ function AdminDashboardPage({ authUser, onSignOut }) {
           const data = await response.json()
           setSummary(data)
         }
-      } catch (e) {
+      } catch {
         // keep placeholders
       } finally {
         setLoading(false)
@@ -64,6 +73,11 @@ function AdminDashboardPage({ authUser, onSignOut }) {
       return accumulator
     }, {})
   }, [metrics.users?.byStatus])
+
+  const reportStatusCounts = metrics.reports?.byStatus || []
+  const claimStatusCounts = metrics.claims?.byStatus || []
+  const openReportsCount = (metrics.reports?.total || 0) - ((reportStatusCounts.find(r=>r.value==='resolved')?.count || 0) + (reportStatusCounts.find(r=>r.value==='archived')?.count || 0))
+  const pendingClaimsCount = claimStatusCounts.find(c=>c.value==='pending')?.count || 0
 
   const scrollToSection = (sectionId) => {
     setActiveSection(sectionId)
@@ -98,42 +112,80 @@ function AdminDashboardPage({ authUser, onSignOut }) {
               <p className='text-sm text-gray-400'>Overview & quick actions</p>
             </div>
             <div className='flex items-center gap-3'>
-              <button className='px-3 py-2 bg-indigo-600 rounded text-white'>New</button>
+              <button onClick={onSignOut} className='px-3 py-2 bg-rose-600 rounded text-white'>Sign Out</button>
               <div className='text-sm text-gray-400'>{authUser?.email || 'admin@campustrace.local'}</div>
             </div>
           </div>
 
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
+          {/* users summary small panel */}
+          <div className='mb-6 flex gap-4'>
+            <div className='bg-slate-800 rounded-lg p-3 text-sm'>
+              <div className='text-gray-400'>Total users</div>
+              <div className='font-bold'>{metrics.users?.total ?? 0}</div>
+            </div>
+            <div className='bg-slate-800 rounded-lg p-3 text-sm'>
+              <div className='text-gray-400'>Active</div>
+              <div className='font-bold'>{metrics.users?.active ?? 0}</div>
+            </div>
+            <div className='bg-slate-800 rounded-lg p-3 text-sm'>
+              <div className='text-gray-400'>Students</div>
+              <div className='font-bold'>{usersByRole.student ?? 0}</div>
+            </div>
+            <div className='bg-slate-800 rounded-lg p-3 text-sm'>
+              <div className='text-gray-400'>Suspended</div>
+              <div className='font-bold'>{usersByStatus.suspended ?? 0}</div>
+            </div>
+          </div>
+
+          {error ? (
+            <div className='rounded-lg bg-red-700/20 border border-red-600 p-3 mb-4 text-sm text-red-100'>
+              {error}
+            </div>
+          ) : null}
+
+          {loading ? (
+            <div className='grid place-items-center rounded-lg border border-white/10 bg-slate-900/60 py-12 mb-6'>
+              <div className='text-sm text-gray-400'>Loading dashboard summary...</div>
+            </div>
+          ) : (
+          <>
+          <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
             <div className='bg-slate-800 rounded-lg p-4'>
-              <div className='text-sm text-gray-400'>Total Revenue</div>
-              <div className='text-2xl font-bold'>$168.5K</div>
-              <div className='mt-3 h-10'><svg className='w-full h-10' /></div>
+              <div className='text-sm text-gray-400'>Total Reports</div>
+              <div className='text-2xl font-bold'>{metrics.reports?.total ?? 0}</div>
+              <div className='mt-2 text-xs text-gray-400'>Reports submitted by users</div>
             </div>
             <div className='bg-slate-800 rounded-lg p-4'>
-              <div className='text-sm text-gray-400'>New Users</div>
-              <div className='text-2xl font-bold'>2.4k</div>
-              <div className='mt-3 h-10'><svg className='w-full h-10' /></div>
+              <div className='text-sm text-gray-400'>Open Reports</div>
+              <div className='text-2xl font-bold'>{metrics.reports?.open ?? (metrics.reports?.byStatus ? metrics.reports.byStatus.reduce((a,b)=>a+(b.value==='open'?b.count:0),0) : 0)}</div>
+              <div className='mt-2 text-xs text-gray-400'>Reports still awaiting resolution</div>
             </div>
             <div className='bg-slate-800 rounded-lg p-4'>
-              <div className='text-sm text-gray-400'>Matches</div>
-              <div className='text-2xl font-bold'>5.6k</div>
-              <div className='mt-3 h-10'><svg className='w-full h-10' /></div>
+              <div className='text-sm text-gray-400'>Matches Created</div>
+              <div className='text-2xl font-bold'>{metrics.matches?.total ?? 0}</div>
+              <div className='mt-2 text-xs text-gray-400'>AI-powered match attempts</div>
+            </div>
+            <div className='bg-slate-800 rounded-lg p-4'>
+              <div className='text-sm text-gray-400'>Pending Claims</div>
+              <div className='text-2xl font-bold'>{pendingClaimsCount}</div>
+              <div className='mt-2 text-xs text-gray-400'>Claims awaiting moderator review</div>
             </div>
           </div>
 
           <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
             <div className='lg:col-span-2 bg-slate-800 rounded-lg p-4'>
               <div className='flex items-center justify-between mb-3'>
-                <div className='text-sm text-gray-300'>Sales & Visits</div>
-                <div className='text-sm text-gray-400'>Monthly</div>
+                <div className='text-sm text-gray-300'>Reports Trend</div>
+                <div className='text-sm text-gray-400'>Last 30 days</div>
               </div>
               <div className='h-48 rounded bg-gradient-to-r from-indigo-600/30 to-emerald-400/10' />
             </div>
             <div className='bg-slate-800 rounded-lg p-4'>
-              <div className='text-sm text-gray-300'>Order Status</div>
+              <div className='text-sm text-gray-300'>Resolution Rate</div>
               <div className='mt-4 flex items-center justify-center'>
-                <div className='w-32 h-32 rounded-full bg-slate-700 flex items-center justify-center text-xl font-semibold'>68%</div>
+                <div className='w-32 h-32 rounded-full bg-slate-700 flex items-center justify-center text-xl font-semibold'>{Math.round(((metrics.reports?.total - openReportsCount) / Math.max(1, metrics.reports?.total)) * 100) || 0}%</div>
               </div>
+              <div className='mt-3 text-xs text-gray-400'>Resolved vs open reports</div>
             </div>
           </div>
 
@@ -143,11 +195,20 @@ function AdminDashboardPage({ authUser, onSignOut }) {
               <div className='text-sm text-gray-400'>Now</div>
             </div>
             <ul className='divide-y divide-slate-700'>
-              <li className='py-2 flex justify-between text-sm'><div>New report submitted by user@example.com</div><div className='text-gray-400'>2m</div></li>
-              <li className='py-2 flex justify-between text-sm'><div>Match confirmed for Report #1234</div><div className='text-gray-400'>10m</div></li>
-              <li className='py-2 flex justify-between text-sm'><div>User suspended: user2@example.com</div><div className='text-gray-400'>1h</div></li>
+              {(recent.activities && recent.activities.length > 0 ? recent.activities : [
+                ...(recent.reports || []).slice(0,3).map(r=>({id:`report-${r.id||r._id}`, summary:`Report: ${r.title||r._id}`, action:r.status || 'submitted', targetType:'Report', createdAt:r.createdAt})),
+                ...(recent.matches || []).slice(0,3).map(m=>({id:`match-${m.id||m._id}`, summary:`Match: ${m.lostItem?.title||'lost'} ↔ ${m.foundItem?.title||'found'}`, action: m.status || 'matched', targetType: 'Match', createdAt: m.createdAt})),
+                ...(recent.claims || []).slice(0,3).map(c=>({id:`claim-${c.id||c._id}`, summary:`Claim: ${c.report?.title||'report'}`, action: c.status || 'claimed', targetType: 'Claim', createdAt: c.createdAt})),
+              ]).map((activity) => (
+                <li key={activity.id} className='py-2 flex justify-between text-sm'>
+                  <div>{activity.summary}</div>
+                  <div className='text-gray-400'>{formatDate(activity.createdAt)}</div>
+                </li>
+              ))}
             </ul>
           </div>
+          </>
+          )}
         </main>
       </div>
     </div>
