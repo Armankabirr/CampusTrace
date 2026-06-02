@@ -22,6 +22,10 @@ function formatDate(value) {
   }
 }
 
+function getCount(rows, value) {
+  return (rows || []).find((item) => item.value === value)?.count || 0
+}
+
 function AdminDashboardPage({ authUser, onSignOut }) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -47,9 +51,11 @@ function AdminDashboardPage({ authUser, onSignOut }) {
         if (response.ok) {
           const data = await response.json()
           setSummary(data)
+        } else {
+          setError('Unable to load live dashboard metrics right now.')
         }
       } catch {
-        // keep placeholders
+        setError('Unable to load live dashboard metrics right now.')
       } finally {
         setLoading(false)
       }
@@ -57,15 +63,8 @@ function AdminDashboardPage({ authUser, onSignOut }) {
     loadSummary()
   }, [])
 
-  const metrics = summary?.metrics || { users: { total: 24800, active: 2400 }, reports: { total: 1200 }, claims: { total: 320 }, matches: { total: 5600 }, notifications: { unread: 32, total: 120 }, fraudReports: { total: 24, open: 6 } }
+  const metrics = summary?.metrics || { users: { total: 0, active: 0 }, reports: { total: 0, byType: [], byStatus: [] }, claims: { total: 0, byStatus: [] }, matches: { total: 0, byStatus: [] }, notifications: { unread: 0, total: 0 }, fraudReports: { total: 0, open: 0 } }
   const recent = summary?.recent || { reports: [], claims: [], matches: [], users: [], notifications: [], activities: [] }
-
-  const usersByRole = useMemo(() => {
-    return (metrics.users?.byRole || []).reduce((accumulator, item) => {
-      accumulator[item.value] = item.count
-      return accumulator
-    }, {})
-  }, [metrics.users?.byRole])
 
   const usersByStatus = useMemo(() => {
     return (metrics.users?.byStatus || []).reduce((accumulator, item) => {
@@ -76,8 +75,61 @@ function AdminDashboardPage({ authUser, onSignOut }) {
 
   const reportStatusCounts = metrics.reports?.byStatus || []
   const claimStatusCounts = metrics.claims?.byStatus || []
-  const openReportsCount = (metrics.reports?.total || 0) - ((reportStatusCounts.find(r=>r.value==='resolved')?.count || 0) + (reportStatusCounts.find(r=>r.value==='archived')?.count || 0))
-  const pendingClaimsCount = claimStatusCounts.find(c=>c.value==='pending')?.count || 0
+  const matchStatusCounts = metrics.matches?.byStatus || []
+  const reportTypeCounts = metrics.reports?.byType || []
+
+  const totalUsers = metrics.users?.total ?? 0
+  const activeUsers = metrics.users?.active ?? 0
+  const lostItemReports = getCount(reportTypeCounts, 'lost')
+  const foundItemReports = getCount(reportTypeCounts, 'found')
+  const pendingMatches = getCount(matchStatusCounts, 'pending')
+  const approvedMatches = getCount(matchStatusCounts, 'confirmed')
+  const successfulReturns = getCount(claimStatusCounts, 'returned')
+  const fraudReports = metrics.fraudReports?.total ?? 0
+
+  const reportStatusChart = [
+    { label: 'Active', value: getCount(reportStatusCounts, 'active'), color: 'bg-sky-400' },
+    { label: 'Matched', value: getCount(reportStatusCounts, 'matched'), color: 'bg-violet-400' },
+    { label: 'Resolved', value: getCount(reportStatusCounts, 'resolved'), color: 'bg-emerald-400' },
+    { label: 'Archived', value: getCount(reportStatusCounts, 'archived'), color: 'bg-slate-500' },
+  ]
+
+  const reportTypeChart = [
+    { label: 'Lost', value: lostItemReports, color: 'bg-amber-400' },
+    { label: 'Found', value: foundItemReports, color: 'bg-teal-400' },
+  ]
+
+  const matchStatusChart = [
+    { label: 'Pending', value: pendingMatches, color: 'bg-yellow-400' },
+    { label: 'Approved', value: approvedMatches, color: 'bg-lime-400' },
+    { label: 'Rejected', value: getCount(matchStatusCounts, 'rejected'), color: 'bg-rose-400' },
+  ]
+
+  const recentActivities = (recent.activities && recent.activities.length > 0)
+    ? recent.activities
+    : [
+        ...(recent.reports || []).slice(0, 4).map((report) => ({
+          id: `report-${report.id || report._id}`,
+          summary: `Report: ${report.title || report.id || report._id}`,
+          action: report.status || 'submitted',
+          targetType: 'Report',
+          createdAt: report.createdAt,
+        })),
+        ...(recent.matches || []).slice(0, 4).map((match) => ({
+          id: `match-${match.id || match._id}`,
+          summary: `Match: ${match.lostItem?.title || 'Lost item'} ↔ ${match.foundItem?.title || 'Found item'}`,
+          action: match.status || 'matched',
+          targetType: 'Match',
+          createdAt: match.createdAt,
+        })),
+        ...(recent.claims || []).slice(0, 4).map((claim) => ({
+          id: `claim-${claim.id || claim._id}`,
+          summary: `Claim: ${claim.report?.title || claim.id || claim._id}`,
+          action: claim.status || 'pending',
+          targetType: 'Claim',
+          createdAt: claim.createdAt,
+        })),
+      ]
 
   const scrollToSection = (sectionId) => {
     setActiveSection(sectionId)
@@ -117,25 +169,43 @@ function AdminDashboardPage({ authUser, onSignOut }) {
             </div>
           </div>
 
-          {/* users summary small panel */}
-          <div className='mb-6 flex gap-4'>
-            <div className='bg-slate-800 rounded-lg p-3 text-sm'>
-              <div className='text-gray-400'>Total users</div>
-              <div className='font-bold'>{metrics.users?.total ?? 0}</div>
+          <section id='overview' className='mb-6'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4'>
+              <div className='bg-slate-800 rounded-lg p-4'>
+                <div className='text-sm text-gray-400'>Total users</div>
+                <div className='mt-1 text-2xl font-bold'>{totalUsers}</div>
+              </div>
+              <div className='bg-slate-800 rounded-lg p-4'>
+                <div className='text-sm text-gray-400'>Active users</div>
+                <div className='mt-1 text-2xl font-bold'>{activeUsers}</div>
+                <div className='mt-1 text-xs text-gray-500'>Suspended: {usersByStatus.suspended ?? 0}</div>
+              </div>
+              <div className='bg-slate-800 rounded-lg p-4'>
+                <div className='text-sm text-gray-400'>Lost item reports</div>
+                <div className='mt-1 text-2xl font-bold'>{lostItemReports}</div>
+              </div>
+              <div className='bg-slate-800 rounded-lg p-4'>
+                <div className='text-sm text-gray-400'>Found item reports</div>
+                <div className='mt-1 text-2xl font-bold'>{foundItemReports}</div>
+              </div>
+              <div className='bg-slate-800 rounded-lg p-4'>
+                <div className='text-sm text-gray-400'>Pending matches</div>
+                <div className='mt-1 text-2xl font-bold'>{pendingMatches}</div>
+              </div>
+              <div className='bg-slate-800 rounded-lg p-4'>
+                <div className='text-sm text-gray-400'>Approved matches</div>
+                <div className='mt-1 text-2xl font-bold'>{approvedMatches}</div>
+              </div>
+              <div className='bg-slate-800 rounded-lg p-4'>
+                <div className='text-sm text-gray-400'>Successful returns</div>
+                <div className='mt-1 text-2xl font-bold'>{successfulReturns}</div>
+              </div>
+              <div className='bg-slate-800 rounded-lg p-4'>
+                <div className='text-sm text-gray-400'>Fraud reports</div>
+                <div className='mt-1 text-2xl font-bold'>{fraudReports}</div>
+              </div>
             </div>
-            <div className='bg-slate-800 rounded-lg p-3 text-sm'>
-              <div className='text-gray-400'>Active</div>
-              <div className='font-bold'>{metrics.users?.active ?? 0}</div>
-            </div>
-            <div className='bg-slate-800 rounded-lg p-3 text-sm'>
-              <div className='text-gray-400'>Students</div>
-              <div className='font-bold'>{usersByRole.student ?? 0}</div>
-            </div>
-            <div className='bg-slate-800 rounded-lg p-3 text-sm'>
-              <div className='text-gray-400'>Suspended</div>
-              <div className='font-bold'>{usersByStatus.suspended ?? 0}</div>
-            </div>
-          </div>
+          </section>
 
           {error ? (
             <div className='rounded-lg bg-red-700/20 border border-red-600 p-3 mb-4 text-sm text-red-100'>
@@ -149,64 +219,92 @@ function AdminDashboardPage({ authUser, onSignOut }) {
             </div>
           ) : (
           <>
-          <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
-            <div className='bg-slate-800 rounded-lg p-4'>
-              <div className='text-sm text-gray-400'>Total Reports</div>
-              <div className='text-2xl font-bold'>{metrics.reports?.total ?? 0}</div>
-              <div className='mt-2 text-xs text-gray-400'>Reports submitted by users</div>
-            </div>
-            <div className='bg-slate-800 rounded-lg p-4'>
-              <div className='text-sm text-gray-400'>Open Reports</div>
-              <div className='text-2xl font-bold'>{metrics.reports?.open ?? (metrics.reports?.byStatus ? metrics.reports.byStatus.reduce((a,b)=>a+(b.value==='open'?b.count:0),0) : 0)}</div>
-              <div className='mt-2 text-xs text-gray-400'>Reports still awaiting resolution</div>
-            </div>
-            <div className='bg-slate-800 rounded-lg p-4'>
-              <div className='text-sm text-gray-400'>Matches Created</div>
-              <div className='text-2xl font-bold'>{metrics.matches?.total ?? 0}</div>
-              <div className='mt-2 text-xs text-gray-400'>AI-powered match attempts</div>
-            </div>
-            <div className='bg-slate-800 rounded-lg p-4'>
-              <div className='text-sm text-gray-400'>Pending Claims</div>
-              <div className='text-2xl font-bold'>{pendingClaimsCount}</div>
-              <div className='mt-2 text-xs text-gray-400'>Claims awaiting moderator review</div>
-            </div>
-          </div>
-
-          <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
+          <section id='analytics' className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
             <div className='lg:col-span-2 bg-slate-800 rounded-lg p-4'>
-              <div className='flex items-center justify-between mb-3'>
-                <div className='text-sm text-gray-300'>Reports Trend</div>
-                <div className='text-sm text-gray-400'>Last 30 days</div>
-              </div>
-              <div className='h-48 rounded bg-gradient-to-r from-indigo-600/30 to-emerald-400/10' />
-            </div>
-            <div className='bg-slate-800 rounded-lg p-4'>
-              <div className='text-sm text-gray-300'>Resolution Rate</div>
-              <div className='mt-4 flex items-center justify-center'>
-                <div className='w-32 h-32 rounded-full bg-slate-700 flex items-center justify-center text-xl font-semibold'>{Math.round(((metrics.reports?.total - openReportsCount) / Math.max(1, metrics.reports?.total)) * 100) || 0}%</div>
-              </div>
-              <div className='mt-3 text-xs text-gray-400'>Resolved vs open reports</div>
-            </div>
-          </div>
+              <div className='text-sm text-gray-300 mb-4'>Analytics charts</div>
 
-          <div className='mt-6 bg-slate-800 rounded-lg p-4'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <div className='rounded-lg bg-slate-900/60 p-3'>
+                  <div className='text-xs uppercase tracking-wider text-gray-400 mb-3'>Reports by item type</div>
+                  <div className='space-y-2'>
+                    {reportTypeChart.map((entry) => {
+                      const maxValue = Math.max(1, ...reportTypeChart.map((item) => item.value))
+                      const width = Math.max(8, Math.round((entry.value / maxValue) * 100))
+                      return (
+                        <div key={entry.label}>
+                          <div className='flex items-center justify-between text-sm mb-1'>
+                            <span>{entry.label}</span>
+                            <span className='text-gray-300'>{entry.value}</span>
+                          </div>
+                          <div className='h-2 w-full rounded bg-slate-700'>
+                            <div className={`h-2 rounded ${entry.color}`} style={{ width: `${width}%` }} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className='rounded-lg bg-slate-900/60 p-3'>
+                  <div className='text-xs uppercase tracking-wider text-gray-400 mb-3'>Matches by status</div>
+                  <div className='space-y-2'>
+                    {matchStatusChart.map((entry) => {
+                      const total = matchStatusChart.reduce((sum, item) => sum + item.value, 0)
+                      const pct = Math.round((entry.value / Math.max(1, total)) * 100)
+                      return (
+                        <div key={entry.label} className='flex items-center justify-between text-sm'>
+                          <span className='flex items-center gap-2'>
+                            <span className={`w-2.5 h-2.5 rounded-full ${entry.color}`} />
+                            {entry.label}
+                          </span>
+                          <span className='text-gray-300'>{entry.value} ({pct}%)</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className='bg-slate-800 rounded-lg p-4'>
+              <div className='text-sm text-gray-300 mb-4'>Report status split</div>
+              <div className='space-y-2'>
+                {reportStatusChart.map((entry) => {
+                  const total = reportStatusChart.reduce((sum, item) => sum + item.value, 0)
+                  const pct = Math.round((entry.value / Math.max(1, total)) * 100)
+                  return (
+                    <div key={entry.label}>
+                      <div className='flex items-center justify-between text-sm mb-1'>
+                        <span>{entry.label}</span>
+                        <span className='text-gray-300'>{entry.value}</span>
+                      </div>
+                      <div className='h-2 w-full rounded bg-slate-700'>
+                        <div className={`h-2 rounded ${entry.color}`} style={{ width: `${Math.max(8, pct)}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+
+          <section id='activity' className='mt-6 bg-slate-800 rounded-lg p-4'>
             <div className='flex items-center justify-between mb-3'>
               <div className='text-sm text-gray-300'>Recent Activity</div>
               <div className='text-sm text-gray-400'>Now</div>
             </div>
             <ul className='divide-y divide-slate-700'>
-              {(recent.activities && recent.activities.length > 0 ? recent.activities : [
-                ...(recent.reports || []).slice(0,3).map(r=>({id:`report-${r.id||r._id}`, summary:`Report: ${r.title||r._id}`, action:r.status || 'submitted', targetType:'Report', createdAt:r.createdAt})),
-                ...(recent.matches || []).slice(0,3).map(m=>({id:`match-${m.id||m._id}`, summary:`Match: ${m.lostItem?.title||'lost'} ↔ ${m.foundItem?.title||'found'}`, action: m.status || 'matched', targetType: 'Match', createdAt: m.createdAt})),
-                ...(recent.claims || []).slice(0,3).map(c=>({id:`claim-${c.id||c._id}`, summary:`Claim: ${c.report?.title||'report'}`, action: c.status || 'claimed', targetType: 'Claim', createdAt: c.createdAt})),
-              ]).map((activity) => (
+              {recentActivities.slice(0, 10).map((activity) => (
                 <li key={activity.id} className='py-2 flex justify-between text-sm'>
-                  <div>{activity.summary}</div>
+                  <div>
+                    <div>{activity.summary}</div>
+                    <div className='text-xs text-gray-500'>{activity.targetType} • {activity.action}</div>
+                  </div>
                   <div className='text-gray-400'>{formatDate(activity.createdAt)}</div>
                 </li>
               ))}
             </ul>
-          </div>
+          </section>
           </>
           )}
         </main>

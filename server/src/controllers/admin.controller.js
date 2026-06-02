@@ -163,6 +163,7 @@ export const getDashboardSummary = async (req, res) => {
       recentClaims,
       recentMatches,
       recentNotifications,
+      recentAuditLogs,
       reportTypeCounts,
       reportCategoryRows,
     ] = await Promise.all([
@@ -175,6 +176,9 @@ export const getDashboardSummary = async (req, res) => {
       Match.countDocuments(),
       Notification.countDocuments(),
       Notification.countDocuments({ isRead: false }),
+      AuditLog.countDocuments(),
+      FraudReport.countDocuments(),
+      FraudReport.countDocuments({ status: 'open' }),
       countByField(Report, 'status', STATUS_FIELDS.report),
       countByField(Claim, 'status', STATUS_FIELDS.claim),
       countByField(Match, 'status', STATUS_FIELDS.match),
@@ -206,8 +210,6 @@ export const getDashboardSummary = async (req, res) => {
         .sort({ createdAt: -1 })
         .limit(8)
         .lean(),
-      FraudReport.countDocuments(),
-      FraudReport.countDocuments({ status: 'open' }),
       countByField(Report, 'itemType', ['lost', 'found']),
       Report.aggregate([
         { $group: { _id: '$category', count: { $sum: 1 } } },
