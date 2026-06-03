@@ -1,16 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-
-const navigationItems = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'user-management', label: 'User Management' },
-  { id: 'reports', label: 'Reports' },
-  { id: 'matches', label: 'Matches' },
-  { id: 'claims', label: 'Claims' },
-  { id: 'fraud', label: 'Fraud' },
-  { id: 'audit', label: 'Audit Logs' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'settings', label: 'Settings' },
-]
+import AdminSidebar from '../components/layout/AdminSidebar'
 
 const roles = ['student', 'moderator', 'fraud_investigator', 'admin', 'super_admin']
 const statuses = ['active', 'suspended', 'deleted']
@@ -221,24 +210,14 @@ function UserManagementPage({ onBack }) {
   return (
     <div className='min-h-screen bg-gray-900 text-gray-100'>
       <div className='flex'>
-        <aside className='w-64 bg-slate-950 p-6 hidden md:block'>
-          <div className='flex items-center justify-between'>
-            <div className='text-lg font-bold'>CampusTrace</div>
-          </div>
-          <nav className='mt-8 space-y-1'>
-            {navigationItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => (item.id === 'overview' ? onBack?.() : null)}
-                className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-md ${item.id === 'user-management' ? 'bg-indigo-600/30 text-white' : 'text-gray-300 hover:bg-slate-800/40'}`}
-              >
-                <span className='w-2 h-2 rounded-full bg-indigo-400' />
-                <span className='flex-1'>{item.label}</span>
-              </button>
-            ))}
-          </nav>
-          <div className='mt-8 text-xs text-gray-400'>Admin</div>
-        </aside>
+        <AdminSidebar
+          activeItemId='user-management'
+          onNavigate={(itemId) => {
+            if (itemId === 'overview') {
+              onBack?.()
+            }
+          }}
+        />
 
         <main className='flex-1 p-6'>
           <div className='flex items-center justify-between mb-6'>
