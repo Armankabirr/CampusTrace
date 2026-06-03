@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 const navigationItems = [
   { id: 'overview', label: 'Overview' },
-  { id: 'activity', label: 'Activity' },
+  { id: 'user-management', label: 'User Management' },
   { id: 'users', label: 'Users' },
   { id: 'reports', label: 'Reports' },
   { id: 'matches', label: 'Matches' },
@@ -13,20 +13,11 @@ const navigationItems = [
   { id: 'settings', label: 'Settings' },
 ]
 
-function formatDate(value) {
-  if (!value) return 'Just now'
-  try {
-    return new Date(value).toLocaleString()
-  } catch {
-    return String(value)
-  }
-}
-
 function getCount(rows, value) {
   return (rows || []).find((item) => item.value === value)?.count || 0
 }
 
-function AdminDashboardPage({ authUser, onSignOut }) {
+function AdminDashboardPage({ authUser, onSignOut, onOpenUserManagement }) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -105,35 +96,18 @@ function AdminDashboardPage({ authUser, onSignOut }) {
     { label: 'Rejected', value: getCount(matchStatusCounts, 'rejected'), color: 'bg-rose-400' },
   ]
 
-  const recentActivities = (recent.activities && recent.activities.length > 0)
-    ? recent.activities
-    : [
-        ...(recent.reports || []).slice(0, 4).map((report) => ({
-          id: `report-${report.id || report._id}`,
-          summary: `Report: ${report.title || report.id || report._id}`,
-          action: report.status || 'submitted',
-          targetType: 'Report',
-          createdAt: report.createdAt,
-        })),
-        ...(recent.matches || []).slice(0, 4).map((match) => ({
-          id: `match-${match.id || match._id}`,
-          summary: `Match: ${match.lostItem?.title || 'Lost item'} ↔ ${match.foundItem?.title || 'Found item'}`,
-          action: match.status || 'matched',
-          targetType: 'Match',
-          createdAt: match.createdAt,
-        })),
-        ...(recent.claims || []).slice(0, 4).map((claim) => ({
-          id: `claim-${claim.id || claim._id}`,
-          summary: `Claim: ${claim.report?.title || claim.id || claim._id}`,
-          action: claim.status || 'pending',
-          targetType: 'Claim',
-          createdAt: claim.createdAt,
-        })),
-      ]
-
   const scrollToSection = (sectionId) => {
     setActiveSection(sectionId)
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const handleNavigationClick = (sectionId) => {
+    if (sectionId === 'user-management' && onOpenUserManagement) {
+      onOpenUserManagement()
+      return
+    }
+
+    scrollToSection(sectionId)
   }
 
   return (
@@ -148,7 +122,7 @@ function AdminDashboardPage({ authUser, onSignOut }) {
           </div>
           <nav className='mt-8 space-y-1'>
             {navigationItems.map((item) => (
-              <button key={item.id} onClick={() => scrollToSection(item.id)} className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-md ${activeSection === item.id ? 'bg-indigo-600/30 text-white' : 'text-gray-300 hover:bg-slate-800/40'}`}>
+              <button key={item.id} onClick={() => handleNavigationClick(item.id)} className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-md ${activeSection === item.id ? 'bg-indigo-600/30 text-white' : 'text-gray-300 hover:bg-slate-800/40'}`}>
                 <span className='w-2 h-2 rounded-full bg-indigo-400' />
                 <span className='flex-1'>{item.label}</span>
               </button>
@@ -288,23 +262,6 @@ function AdminDashboardPage({ authUser, onSignOut }) {
             </div>
           </section>
 
-          <section id='activity' className='mt-6 bg-slate-800 rounded-lg p-4'>
-            <div className='flex items-center justify-between mb-3'>
-              <div className='text-sm text-gray-300'>Recent Activity</div>
-              <div className='text-sm text-gray-400'>Now</div>
-            </div>
-            <ul className='divide-y divide-slate-700'>
-              {recentActivities.slice(0, 10).map((activity) => (
-                <li key={activity.id} className='py-2 flex justify-between text-sm'>
-                  <div>
-                    <div>{activity.summary}</div>
-                    <div className='text-xs text-gray-500'>{activity.targetType} • {activity.action}</div>
-                  </div>
-                  <div className='text-gray-400'>{formatDate(activity.createdAt)}</div>
-                </li>
-              ))}
-            </ul>
-          </section>
           </>
           )}
         </main>

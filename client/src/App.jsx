@@ -10,9 +10,10 @@ import ReportDetailPage from './pages/ReportDetailPage'
 import MatchesPage from './pages/MatchesPage'
 import Sign from './pages/Sign'
 import AdminDashboardPage from './pages/AdminDashboardPage'
+import UserManagementPage from './pages/UserManagementPage'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'forgot-password', 'profile', 'report', 'browse', 'report-detail', 'admin-dashboard'
+  const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'forgot-password', 'profile', 'report', 'browse', 'report-detail', 'admin-dashboard', 'admin-user-management'
   const [prefilledLoginEmail, setPrefilledLoginEmail] = useState('')
   const [authUser, setAuthUser] = useState(null)
   const [selectedReportId, setSelectedReportId] = useState(null)
@@ -128,6 +129,11 @@ function App() {
     const syncRouteFromPath = () => {
       const path = window.location.pathname
       const matchDetail = path.match(/^\/matches\/([^/]+)$/)
+
+      if (path === '/admin/usermanagement') {
+        setCurrentPage('admin-user-management')
+        return
+      }
 
       if (path === '/matches') {
         setCurrentPage('matches')
@@ -325,6 +331,16 @@ function App() {
     setCurrentPage('forgot-password')
   }
 
+  const handleOpenUserManagement = () => {
+    window.history.pushState({}, '', '/admin/usermanagement')
+    setCurrentPage('admin-user-management')
+  }
+
+  const handleBackToAdminDashboard = () => {
+    window.history.pushState({}, '', '/')
+    setCurrentPage('admin-dashboard')
+  }
+
   const handleBackToLoginFromForgotPassword = () => {
     setCurrentPage('login')
   }
@@ -346,7 +362,9 @@ function App() {
     ) : currentPage === 'signup' ? (
       <Sign onBack={handleBackClick} onSwitchToLogin={handleSignupComplete} />
     ) : currentPage === 'admin-dashboard' ? (
-      <AdminDashboardPage authUser={authUser} onSignOut={handleSignOut} />
+      <AdminDashboardPage authUser={authUser} onSignOut={handleSignOut} onOpenUserManagement={handleOpenUserManagement} />
+    ) : currentPage === 'admin-user-management' ? (
+      <UserManagementPage onBack={handleBackToAdminDashboard} />
     ) : currentPage === 'profile' ? (
       <ProfilePage
         authUser={authUser}
