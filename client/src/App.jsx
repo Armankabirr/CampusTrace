@@ -364,7 +364,7 @@ function App() {
     ) : currentPage === 'admin-dashboard' ? (
       <AdminDashboardPage authUser={authUser} onSignOut={handleSignOut} onOpenUserManagement={handleOpenUserManagement} />
     ) : currentPage === 'admin-user-management' ? (
-      <UserManagementPage onBack={handleBackToAdminDashboard} />
+      <UserManagementPage onBack={handleBackToAdminDashboard} onSignOut={handleSignOut} />
     ) : currentPage === 'profile' ? (
       <ProfilePage
         authUser={authUser}

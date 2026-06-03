@@ -13,7 +13,7 @@ function formatDate(value) {
   }
 }
 
-function UserManagementPage({ onBack }) {
+function UserManagementPage({ onBack, onSignOut }) {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
@@ -217,6 +217,7 @@ function UserManagementPage({ onBack }) {
               onBack?.()
             }
           }}
+          onSignOut={onSignOut}
         />
 
         <main className='flex-1 p-6'>
