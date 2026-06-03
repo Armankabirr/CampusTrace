@@ -29,6 +29,11 @@ function UserManagementPage({ onBack }) {
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
   const [error, setError] = useState('')
+  const [toast, setToast] = useState(null)
+  const [actionModal, setActionModal] = useState(null)
+  const [actionReason, setActionReason] = useState('')
+  const [actionLoading, setActionLoading] = useState(false)
+  const [actionTargetId, setActionTargetId] = useState(null)
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -101,8 +106,7 @@ function UserManagementPage({ onBack }) {
     }
   }
 
-  const updateUserStatus = async (userId, accountStatus) => {
-    const reason = window.prompt('Optional reason for this action:') || ''
+  const updateUserStatus = async (userId, accountStatus, reason = '') => {
     try {
       const token = localStorage.getItem('accessToken')
       const response = await fetch(`/api/admin/users/${userId}/status`, {
@@ -114,25 +118,20 @@ function UserManagementPage({ onBack }) {
         body: JSON.stringify({ accountStatus, reason }),
       })
 
-      if (!response.ok) {
-        return
-      }
+      if (!response.ok) return false
 
       const data = await response.json()
       setUsers((prev) => prev.map((user) => (user.id === data.user?.id ? data.user : user)))
       if (selectedUser?.id === data.user?.id) {
         setSelectedUser(data.user)
       }
+      return true
     } catch {
-      // no-op
+      return false
     }
   }
 
-  const deleteUser = async (userId) => {
-    const confirmed = window.confirm('Delete this user? This will revoke access immediately.')
-    if (!confirmed) return
-
-    const reason = window.prompt('Optional reason for deletion:') || ''
+  const deleteUser = async (userId, reason = '') => {
     try {
       const token = localStorage.getItem('accessToken')
       const response = await fetch(`/api/admin/users/${userId}`, {
@@ -144,13 +143,12 @@ function UserManagementPage({ onBack }) {
         body: JSON.stringify({ reason }),
       })
 
-      if (!response.ok) {
-        return
-      }
+      if (!response.ok) return false
 
       await loadUsers()
+      return true
     } catch {
-      // no-op
+      return false
     }
   }
 
@@ -178,6 +176,46 @@ function UserManagementPage({ onBack }) {
     } catch {
       // no-op
     }
+  }
+
+  const openActionModal = (user, actionType) => {
+    setActionModal({ user, actionType })
+    setActionReason('')
+  }
+
+  const closeActionModal = () => {
+    setActionModal(null)
+    setActionReason('')
+  }
+
+  const handleConfirmAction = async () => {
+    if (!actionModal?.user) return
+    setActionLoading(true)
+    setActionTargetId(actionModal.user.id)
+
+    const { user, actionType } = actionModal
+    let ok = false
+
+    if (actionType === 'delete') {
+      ok = await deleteUser(user.id, actionReason)
+    } else if (actionType === 'suspend') {
+      ok = await updateUserStatus(user.id, 'suspended', actionReason)
+    } else if (actionType === 'reactivate') {
+      ok = await updateUserStatus(user.id, 'active', actionReason)
+    }
+
+    setToast({
+      type: ok ? 'success' : 'error',
+      message: ok ? `User ${actionType} action completed.` : `Unable to ${actionType} user right now.`,
+    })
+
+    setActionLoading(false)
+    setActionTargetId(null)
+    closeActionModal()
+
+    setTimeout(() => {
+      setToast(null)
+    }, 3000)
   }
 
   return (
@@ -212,6 +250,12 @@ function UserManagementPage({ onBack }) {
               Back to Dashboard
             </button>
           </div>
+
+          {toast ? (
+            <div className={`mb-4 rounded-lg border px-4 py-3 text-sm ${toast.type === 'success' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100' : 'border-rose-500/40 bg-rose-500/10 text-rose-100'}`}>
+              {toast.message}
+            </div>
+          ) : null}
 
           <div className='grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-6'>
             <section className='bg-slate-800 rounded-lg p-4'>
@@ -313,20 +357,23 @@ function UserManagementPage({ onBack }) {
                               </button>
                               <div className='flex flex-wrap gap-2'>
                                 <button
-                                  onClick={() => updateUserStatus(user.id, 'suspended')}
-                                  className='px-2 py-1 rounded bg-amber-500/20 text-amber-200'
+                                  onClick={() => openActionModal(user, 'suspend')}
+                                  className='px-2 py-1 rounded bg-amber-500/20 text-amber-200 disabled:opacity-50'
+                                  disabled={actionLoading && actionTargetId === user.id}
                                 >
                                   Suspend
                                 </button>
                                 <button
-                                  onClick={() => updateUserStatus(user.id, 'active')}
-                                  className='px-2 py-1 rounded bg-emerald-500/20 text-emerald-200'
+                                  onClick={() => openActionModal(user, 'reactivate')}
+                                  className='px-2 py-1 rounded bg-emerald-500/20 text-emerald-200 disabled:opacity-50'
+                                  disabled={actionLoading && actionTargetId === user.id}
                                 >
                                   Reactivate
                                 </button>
                                 <button
-                                  onClick={() => deleteUser(user.id)}
-                                  className='px-2 py-1 rounded bg-rose-500/20 text-rose-200'
+                                  onClick={() => openActionModal(user, 'delete')}
+                                  className='px-2 py-1 rounded bg-rose-500/20 text-rose-200 disabled:opacity-50'
+                                  disabled={actionLoading && actionTargetId === user.id}
                                 >
                                   Delete
                                 </button>
@@ -430,6 +477,45 @@ function UserManagementPage({ onBack }) {
           </div>
         </main>
       </div>
+
+      {actionModal ? (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'>
+          <div className='w-full max-w-md rounded-xl bg-slate-900 border border-slate-700 p-5 shadow-xl'>
+            <div className='text-lg font-semibold capitalize'>{actionModal.actionType} user</div>
+            <p className='mt-1 text-sm text-gray-400'>
+              {actionModal.actionType === 'delete'
+                ? 'This will revoke access immediately. You can include a reason below.'
+                : 'Confirm this change and include an optional reason.'}
+            </p>
+            <div className='mt-3 rounded-lg bg-slate-800/60 px-3 py-2 text-sm'>
+              {actionModal.user?.name || 'Unnamed user'} • {actionModal.user?.email}
+            </div>
+            <textarea
+              value={actionReason}
+              onChange={(event) => setActionReason(event.target.value)}
+              rows={3}
+              className='mt-3 w-full rounded bg-slate-800/80 border border-slate-700 p-2 text-sm'
+              placeholder='Reason (optional)'
+            />
+            <div className='mt-4 flex items-center justify-end gap-2'>
+              <button
+                onClick={closeActionModal}
+                className='px-3 py-2 rounded bg-slate-800 text-gray-100'
+                disabled={actionLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAction}
+                className='px-3 py-2 rounded bg-indigo-600 text-white disabled:opacity-60'
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Working...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
