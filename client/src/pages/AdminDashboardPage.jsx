@@ -67,6 +67,7 @@ function AdminDashboardPage({ authUser, onSignOut, onOpenUserManagement, onOpenR
   const fraudReports = metrics.fraudReports?.total ?? 0
 
   const reportStatusChart = [
+    { label: 'Pending', value: getCount(reportStatusCounts, 'pending'), color: 'bg-amber-300' },
     { label: 'Active', value: getCount(reportStatusCounts, 'active'), color: 'bg-sky-400' },
     { label: 'Matched', value: getCount(reportStatusCounts, 'matched'), color: 'bg-violet-400' },
     { label: 'Resolved', value: getCount(reportStatusCounts, 'resolved'), color: 'bg-emerald-400' },

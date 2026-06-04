@@ -114,10 +114,7 @@ export const createReport = async (req, res) => {
       contactEmail: normalizedContactEmail,
       contactPhone: normalizedContactPhone,
       verificationDetails: normalizedVerificationDetails,
-    });
-
-    findMatches(report).catch((error) => {
-      console.error('Matching error:', error);
+      status: 'pending',
     });
 
     return res.status(201).json({
@@ -218,7 +215,7 @@ export const updateReportStatus = async (req, res) => {
     const { status } = req.body;
     const userId = req.user._id;
 
-    if (!['active', 'matched', 'resolved', 'archived'].includes(status)) {
+    if (!['pending', 'active', 'matched', 'resolved', 'archived'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status value.' });
     }
 

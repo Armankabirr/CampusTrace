@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import AdminSidebar from '../components/layout/AdminSidebar'
 
-const statusOptions = ['active', 'matched', 'resolved', 'archived']
+const statusOptions = ['pending', 'active', 'matched', 'resolved', 'archived']
 const itemTypeOptions = ['lost', 'found']
 
 function formatDate(value) {

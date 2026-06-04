@@ -7,7 +7,7 @@ import AuditLog from '../models/auditLog.model.js';
 import FraudReport from '../models/fraudReport.model.js';
 
 const STATUS_FIELDS = {
-  report: ['active', 'matched', 'resolved', 'archived'],
+  report: ['pending', 'active', 'matched', 'resolved', 'archived'],
   claim: ['pending', 'verified', 'rejected', 'completed', 'returned'],
   match: ['pending', 'confirmed', 'rejected'],
 };

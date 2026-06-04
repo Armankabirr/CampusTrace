@@ -13,7 +13,7 @@ import { notifyUser } from '../services/notificationService.js';
 const ADMIN_ROLES = ['student', 'moderator', 'fraud_investigator', 'admin', 'super_admin'];
 const FRAUD_STATUSES = ['open', 'under_review', 'resolved', 'dismissed'];
 const USER_ACCOUNT_STATUSES = ['active', 'suspended', 'deleted'];
-const REPORT_STATUSES = ['active', 'matched', 'resolved', 'archived'];
+const REPORT_STATUSES = ['pending', 'active', 'matched', 'resolved', 'archived'];
 const CLAIM_STATUSES = ['pending', 'verified', 'rejected', 'completed', 'returned'];
 const MATCH_STATUSES = ['pending', 'confirmed', 'rejected'];
 const NOTIFICATION_TYPES = ['system_announcement', 'system_warning', 'system_notification'];

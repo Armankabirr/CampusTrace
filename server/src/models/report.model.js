@@ -93,8 +93,8 @@ const reportSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['active', 'matched', 'resolved', 'archived'],
-      default: 'active',
+      enum: ['pending', 'active', 'matched', 'resolved', 'archived'],
+      default: 'pending',
     },
     views: {
       type: Number,
