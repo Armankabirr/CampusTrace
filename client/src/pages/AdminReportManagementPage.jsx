@@ -357,7 +357,6 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
                   <option value='archived'>Reject (archive)</option>
                   <option value='resolved'>Resolve</option>
                   <option value='matched'>Mark matched</option>
-                  <option value='archived'>Archive</option>
                   <option value='delete'>Delete</option>
                 </select>
                 <button
@@ -443,13 +442,6 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
                               disabled={actionLoading}
                             >
                               Reject
-                            </button>
-                            <button
-                              onClick={() => applyQuickStatus(report.id, 'archived', 'Archive')}
-                              className='px-2 py-1 rounded bg-slate-600/60 text-gray-200'
-                              disabled={actionLoading}
-                            >
-                              Archive
                             </button>
                             <button
                               onClick={() => handleDelete(report.id)}

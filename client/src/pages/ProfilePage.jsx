@@ -815,7 +815,7 @@ function ProfilePage({ authUser, onHome, onBrowse, onMatches, onReportItem, onSi
                       </div>
 
                       <span className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                        Status: {report.status || 'active'}
+                        Status: {report.status === 'archived' ? 'rejected' : report.status || 'active'}
                       </span>
                     </article>
                   ))}

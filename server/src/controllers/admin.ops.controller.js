@@ -16,7 +16,7 @@ const USER_ACCOUNT_STATUSES = ['active', 'suspended', 'deleted'];
 const REPORT_STATUSES = ['pending', 'active', 'matched', 'resolved', 'archived'];
 const CLAIM_STATUSES = ['pending', 'verified', 'rejected', 'completed', 'returned'];
 const MATCH_STATUSES = ['pending', 'confirmed', 'rejected'];
-const NOTIFICATION_TYPES = ['system_announcement', 'system_warning', 'system_notification'];
+const NOTIFICATION_TYPES = ['system_announcement', 'system_warning', 'system_notification', 'report_approved', 'report_rejected'];
 
 const escapeRegExp = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -552,6 +552,26 @@ export const updateAdminReportStatus = async (req, res) => {
     const before = serializeReport(report);
     report.status = status;
     await report.save();
+
+    if (before.status === 'pending' && report.userId) {
+      if (status === 'active') {
+        await Notification.create({
+          userId: report.userId._id || report.userId,
+          type: 'report_approved',
+          reportId: report._id,
+          message: 'Your report has been approved and is now visible to other students.',
+        });
+      }
+
+      if (status === 'archived') {
+        await Notification.create({
+          userId: report.userId._id || report.userId,
+          type: 'report_rejected',
+          reportId: report._id,
+          message: 'Your report was rejected by the admin team. Please review and resubmit if needed.',
+        });
+      }
+    }
 
     await logAuditEvent({
       actorUserId: req.user?._id || null,

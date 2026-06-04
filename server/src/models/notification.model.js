@@ -15,6 +15,8 @@ const notificationSchema = new mongoose.Schema(
         'claim_rejected',
         'claim_pending_approval',
         'match_found',
+        'report_approved',
+        'report_rejected',
         'system_announcement',
         'system_warning',
         'system_notification',
