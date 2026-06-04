@@ -34,6 +34,7 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
   const [bulkAction, setBulkAction] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
   const [editReport, setEditReport] = useState(null)
+  const [viewReport, setViewReport] = useState(null)
   const [editDraft, setEditDraft] = useState({
     title: '',
     description: '',
@@ -197,8 +198,16 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
     })
   }
 
+  const openViewPanel = (report) => {
+    setViewReport(report)
+  }
+
   const closeEditPanel = () => {
     setEditReport(null)
+  }
+
+  const closeViewPanel = () => {
+    setViewReport(null)
   }
 
   const saveEdit = async () => {
@@ -410,6 +419,12 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
                         <td className='py-3'>
                           <div className='flex flex-wrap gap-2 text-xs'>
                             <button
+                              onClick={() => openViewPanel(report)}
+                              className='px-2 py-1 rounded bg-indigo-600/30 text-white'
+                            >
+                              View
+                            </button>
+                            <button
                               onClick={() => openEditPanel(report)}
                               className='px-2 py-1 rounded bg-slate-700/70 text-white'
                             >
@@ -470,6 +485,74 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
               </button>
             </div>
           </section>
+
+          {viewReport ? (
+            <section className='mt-6 bg-slate-800 rounded-lg p-4'>
+              <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4'>
+                <div>
+                  <div className='text-lg font-semibold'>Report Details</div>
+                  <div className='text-xs text-gray-400'>Extended view for admin review.</div>
+                </div>
+                <button onClick={closeViewPanel} className='px-3 py-2 rounded bg-slate-700/70 text-gray-100'>
+                  Close
+                </button>
+              </div>
+
+              <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4'>
+                <div className='rounded-lg bg-slate-900/60 border border-white/5 overflow-hidden'>
+                  {viewReport.imageUrl ? (
+                    <img
+                      src={viewReport.imageUrl}
+                      alt={viewReport.title || 'Report image'}
+                      className='w-full h-full object-cover'
+                    />
+                  ) : (
+                    <div className='h-full min-h-[200px] grid place-items-center text-3xl text-gray-500'>
+                      📷
+                    </div>
+                  )}
+                </div>
+
+                <div className='space-y-3 text-sm'>
+                  <div>
+                    <div className='text-xs text-gray-400'>Title</div>
+                    <div className='text-lg font-semibold text-gray-100'>{viewReport.title || 'Untitled report'}</div>
+                  </div>
+                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                    <div>
+                      <div className='text-xs text-gray-400'>Type</div>
+                      <div className='text-gray-200 uppercase tracking-wide'>{viewReport.itemType || '—'}</div>
+                    </div>
+                    <div>
+                      <div className='text-xs text-gray-400'>Status</div>
+                      <div className='text-gray-200 uppercase tracking-wide'>{formatStatusLabel(viewReport.status)}</div>
+                    </div>
+                    <div>
+                      <div className='text-xs text-gray-400'>Category</div>
+                      <div className='text-gray-200'>{viewReport.category || '—'}</div>
+                    </div>
+                    <div>
+                      <div className='text-xs text-gray-400'>Created</div>
+                      <div className='text-gray-200'>{formatDate(viewReport.createdAt)}</div>
+                    </div>
+                    <div className='sm:col-span-2'>
+                      <div className='text-xs text-gray-400'>Last seen location</div>
+                      <div className='text-gray-200'>{viewReport.lastSeenLocation || '—'}</div>
+                    </div>
+                    <div className='sm:col-span-2'>
+                      <div className='text-xs text-gray-400'>Owner</div>
+                      <div className='text-gray-200'>{viewReport.owner?.name || '—'}</div>
+                      <div className='text-xs text-gray-500'>{viewReport.owner?.email || ''}</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className='text-xs text-gray-400'>Description</div>
+                    <div className='text-gray-200 whitespace-pre-wrap'>{viewReport.description || '—'}</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          ) : null}
 
           {editReport ? (
             <section className='mt-6 bg-slate-800 rounded-lg p-4'>
