@@ -1,7 +1,7 @@
 const navigationItems = [
   { id: 'overview', label: 'Overview' },
   { id: 'user-management', label: 'User Management' },
-  { id: 'reports', label: 'Reports' },
+  { id: 'reports', label: 'Report Management' },
   { id: 'matches', label: 'Matches' },
   { id: 'claims', label: 'Claims' },
   { id: 'fraud', label: 'Fraud' },

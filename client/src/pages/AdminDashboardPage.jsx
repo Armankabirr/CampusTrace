@@ -5,7 +5,7 @@ function getCount(rows, value) {
   return (rows || []).find((item) => item.value === value)?.count || 0
 }
 
-function AdminDashboardPage({ authUser, onSignOut, onOpenUserManagement }) {
+function AdminDashboardPage({ authUser, onSignOut, onOpenUserManagement, onOpenReportManagement }) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -92,6 +92,11 @@ function AdminDashboardPage({ authUser, onSignOut, onOpenUserManagement }) {
   const handleNavigationClick = (sectionId) => {
     if (sectionId === 'user-management' && onOpenUserManagement) {
       onOpenUserManagement()
+      return
+    }
+
+    if (sectionId === 'reports' && onOpenReportManagement) {
+      onOpenReportManagement()
       return
     }
 
