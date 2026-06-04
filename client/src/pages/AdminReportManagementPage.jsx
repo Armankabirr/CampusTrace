@@ -35,6 +35,8 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
   const [actionLoading, setActionLoading] = useState(false)
   const [editReport, setEditReport] = useState(null)
   const [viewReport, setViewReport] = useState(null)
+  const [rejectionModal, setRejectionModal] = useState(null)
+  const [rejectionReason, setRejectionReason] = useState('')
   const [editDraft, setEditDraft] = useState({
     title: '',
     description: '',
@@ -84,7 +86,7 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
     loadReports()
   }, [queryString])
 
-  const updateReportStatus = async (reportId, status) => {
+  const updateReportStatus = async (reportId, status, reason = '') => {
     try {
       const token = localStorage.getItem('accessToken')
       const response = await fetch(`/api/admin/reports/${reportId}/status`, {
@@ -93,7 +95,7 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, reason }),
       })
 
       return response.ok
@@ -161,6 +163,11 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
   const handleBulkAction = async () => {
     if (!bulkAction || selectedIds.length === 0) return
 
+    if (bulkAction === 'archived') {
+      setRejectionModal({ mode: 'bulk' })
+      return
+    }
+
     if (bulkAction === 'delete') {
       const confirmed = window.confirm('Delete selected reports? This cannot be undone.')
       if (!confirmed) return
@@ -202,12 +209,50 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
     setViewReport(report)
   }
 
+  const openRejectionModal = (report) => {
+    setRejectionModal({ mode: 'single', report })
+    setRejectionReason('')
+  }
+
   const closeEditPanel = () => {
     setEditReport(null)
   }
 
   const closeViewPanel = () => {
     setViewReport(null)
+  }
+
+  const closeRejectionModal = () => {
+    setRejectionModal(null)
+    setRejectionReason('')
+  }
+
+  const confirmRejection = async () => {
+    if (!rejectionModal) return
+
+    if (rejectionModal.mode === 'bulk') {
+      setActionLoading(true)
+      const results = await Promise.all(
+        selectedIds.map((id) => updateReportStatus(id, 'archived', rejectionReason))
+      )
+      const ok = results.every(Boolean)
+      setActionLoading(false)
+      setBulkAction('')
+      closeRejectionModal()
+
+      if (ok) {
+        showToast('success', 'Bulk rejection completed successfully.')
+        loadReports()
+      } else {
+        showToast('error', 'Unable to reject selected reports.')
+      }
+      return
+    }
+
+    if (rejectionModal.mode === 'single' && rejectionModal.report) {
+      applyQuickStatus(rejectionModal.report.id, 'archived', 'Reject', rejectionReason)
+      closeRejectionModal()
+    }
   }
 
   const saveEdit = async () => {
@@ -225,9 +270,9 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
     }
   }
 
-  const applyQuickStatus = async (reportId, status, label) => {
+  const applyQuickStatus = async (reportId, status, label, reason = '') => {
     setActionLoading(true)
-    const ok = await updateReportStatus(reportId, status)
+    const ok = await updateReportStatus(reportId, status, reason)
     setActionLoading(false)
 
     if (ok) {
@@ -437,7 +482,7 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
                               Approve
                             </button>
                             <button
-                              onClick={() => applyQuickStatus(report.id, 'archived', 'Reject')}
+                              onClick={() => openRejectionModal(report)}
                               className='px-2 py-1 rounded bg-amber-500/20 text-amber-200'
                               disabled={actionLoading}
                             >
@@ -603,6 +648,59 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
                 </button>
               </div>
             </section>
+          ) : null}
+
+          {rejectionModal ? (
+            <div className='fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4'>
+              <div className='w-full max-w-lg rounded-lg bg-slate-900 border border-white/10 p-5'>
+                <div className='flex items-center justify-between'>
+                  <div>
+                    <div className='text-lg font-semibold'>Rejection reason</div>
+                    <div className='text-xs text-gray-400'>This will be sent to the report owner.</div>
+                  </div>
+                  <button onClick={closeRejectionModal} className='text-sm text-gray-400 hover:text-gray-200'>
+                    Close
+                  </button>
+                </div>
+
+                {rejectionModal.mode === 'single' && rejectionModal.report ? (
+                  <div className='mt-3 text-sm text-gray-300'>
+                    Report: <span className='font-semibold text-gray-100'>{rejectionModal.report.title || 'Untitled report'}</span>
+                  </div>
+                ) : (
+                  <div className='mt-3 text-sm text-gray-300'>
+                    Rejecting {selectedIds.length} selected reports.
+                  </div>
+                )}
+
+                <div className='mt-4'>
+                  <label className='text-xs text-gray-400'>Reason (optional)</label>
+                  <textarea
+                    value={rejectionReason}
+                    onChange={(event) => setRejectionReason(event.target.value)}
+                    className='mt-1 w-full min-h-[120px] rounded bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-gray-100'
+                    placeholder='Add a brief reason for rejection...'
+                  />
+                </div>
+
+                <div className='mt-4 flex justify-end gap-2'>
+                  <button
+                    onClick={closeRejectionModal}
+                    className='px-3 py-2 rounded bg-slate-800 text-gray-200'
+                    disabled={actionLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmRejection}
+                    className='px-4 py-2 rounded bg-amber-500/20 text-amber-200 disabled:opacity-50'
+                    disabled={actionLoading}
+                  >
+                    Confirm rejection
+                  </button>
+                </div>
+              </div>
+            </div>
           ) : null}
         </main>
       </div>

@@ -9,6 +9,7 @@ import FraudReport from '../models/fraudReport.model.js';
 import { deleteImageFromImageKit } from '../services/imagekit.service.js';
 import { logAuditEvent } from '../services/auditLog.service.js';
 import { notifyUser } from '../services/notificationService.js';
+import { findMatches } from '../services/matchingService.js';
 
 const ADMIN_ROLES = ['student', 'moderator', 'fraud_investigator', 'admin', 'super_admin'];
 const FRAUD_STATUSES = ['open', 'under_review', 'resolved', 'dismissed'];
@@ -538,7 +539,7 @@ export const updateAdminReport = async (req, res) => {
 export const updateAdminReportStatus = async (req, res) => {
   try {
     const { reportId } = req.params;
-    const { status } = req.body;
+    const { status, reason } = req.body;
 
     if (!REPORT_STATUSES.includes(status)) {
       return res.status(400).json({ message: 'Invalid report status.' });
@@ -561,14 +562,21 @@ export const updateAdminReportStatus = async (req, res) => {
           reportId: report._id,
           message: 'Your report has been approved and is now visible to other students.',
         });
+
+        findMatches(report).catch((error) => {
+          console.error('Approved report matching error:', error);
+        });
       }
 
       if (status === 'archived') {
+        const trimmedReason = String(reason || '').trim();
         await Notification.create({
           userId: report.userId._id || report.userId,
           type: 'report_rejected',
           reportId: report._id,
-          message: 'Your report was rejected by the admin team. Please review and resubmit if needed.',
+          message: trimmedReason
+            ? `Your report was rejected by the admin team. Reason: ${trimmedReason}`
+            : 'Your report was rejected by the admin team. Please review and resubmit if needed.',
         });
       }
     }
