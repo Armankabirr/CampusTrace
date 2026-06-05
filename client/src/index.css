@@ -57,6 +57,7 @@ html.dark body {
 	0% {
 		filter: saturate(0.95) contrast(1);
 	}
+
 	100% {
 		filter: saturate(1.05) contrast(1.05);
 	}

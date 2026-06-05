@@ -475,28 +475,28 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
                               Edit
                             </button>
                             <button
-                              onClick={() => applyQuickStatus(report.id, 'active', 'Approve')}
-                              className='px-2 py-1 rounded bg-emerald-500/20 text-emerald-200'
-                              disabled={actionLoading}
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => openRejectionModal(report)}
-                              className='px-2 py-1 rounded bg-amber-500/20 text-amber-200'
-                              disabled={actionLoading}
-                            >
-                              Reject
-                            </button>
-                            <button
-                              onClick={() => handleDelete(report.id)}
-                              className='px-2 py-1 rounded bg-rose-500/20 text-rose-200'
-                              disabled={actionLoading}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
+                               onClick={() => applyQuickStatus(report.id, 'active', 'Approve')}
+                               className='px-2 py-1 rounded bg-emerald-500/20 text-emerald-200 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity'
+                               disabled={actionLoading || report.status === 'active'}
+                             >
+                               {report.status === 'active' ? 'Approved' : 'Approve'}
+                             </button>
+                             <button
+                               onClick={() => openRejectionModal(report)}
+                               className='px-2 py-1 rounded bg-amber-500/20 text-amber-200 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity'
+                               disabled={actionLoading || report.status === 'archived'}
+                             >
+                               {report.status === 'archived' ? 'Rejected' : 'Reject'}
+                             </button>
+                             <button
+                               onClick={() => handleDelete(report.id)}
+                               className='px-2 py-1 rounded bg-rose-500/20 text-rose-200 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity'
+                               disabled={actionLoading}
+                             >
+                               Delete
+                             </button>
+                           </div>
+                         </td>
                       </tr>
                     ))}
                   </tbody>
