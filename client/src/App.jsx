@@ -12,6 +12,8 @@ import Sign from './pages/Sign'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import UserManagementPage from './pages/UserManagementPage'
 import AdminReportManagementPage from './pages/AdminReportManagementPage'
+import AdminMatchManagementPage from './pages/AdminMatchManagementPage'
+import AdminClaimManagementPage from './pages/AdminClaimManagementPage'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'forgot-password', 'profile', 'report', 'browse', 'report-detail', 'admin-dashboard', 'admin-user-management', 'admin-report-management'
@@ -138,6 +140,16 @@ function App() {
 
       if (path === '/admin/reports') {
         setCurrentPage('admin-report-management')
+        return
+      }
+
+      if (path === '/admin/matches') {
+        setCurrentPage('admin-match-management')
+        return
+      }
+
+      if (path === '/admin/claims') {
+        setCurrentPage('admin-claim-management')
         return
       }
 
@@ -347,6 +359,16 @@ function App() {
     setCurrentPage('admin-report-management')
   }
 
+  const handleOpenMatchManagement = () => {
+    window.history.pushState({}, '', '/admin/matches')
+    setCurrentPage('admin-match-management')
+  }
+
+  const handleOpenClaimManagement = () => {
+    window.history.pushState({}, '', '/admin/claims')
+    setCurrentPage('admin-claim-management')
+  }
+
   const handleBackToAdminDashboard = () => {
     window.history.pushState({}, '', '/')
     setCurrentPage('admin-dashboard')
@@ -378,6 +400,8 @@ function App() {
         onSignOut={handleSignOut}
         onOpenUserManagement={handleOpenUserManagement}
         onOpenReportManagement={handleOpenReportManagement}
+        onOpenMatchManagement={handleOpenMatchManagement}
+        onOpenClaimManagement={handleOpenClaimManagement}
       />
     ) : currentPage === 'admin-user-management' ? (
       <UserManagementPage onBack={handleBackToAdminDashboard} onSignOut={handleSignOut} />
@@ -386,6 +410,18 @@ function App() {
         onBack={handleBackToAdminDashboard}
         onSignOut={handleSignOut}
         onOpenUserManagement={handleOpenUserManagement}
+        onOpenMatchManagement={handleOpenMatchManagement}
+        onOpenClaimManagement={handleOpenClaimManagement}
+      />
+    ) : currentPage === 'admin-match-management' ? (
+      <AdminMatchManagementPage
+        onBack={handleBackToAdminDashboard}
+        onSignOut={handleSignOut}
+      />
+    ) : currentPage === 'admin-claim-management' ? (
+      <AdminClaimManagementPage
+        onBack={handleBackToAdminDashboard}
+        onSignOut={handleSignOut}
       />
     ) : currentPage === 'profile' ? (
       <ProfilePage
