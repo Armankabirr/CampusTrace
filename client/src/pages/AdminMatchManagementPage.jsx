@@ -10,7 +10,14 @@ function formatDate(value) {
   }
 }
 
-function AdminMatchManagementPage({ onBack, onSignOut }) {
+function AdminMatchManagementPage({
+  onBack,
+  onSignOut,
+  onOpenUserManagement,
+  onOpenReportManagement,
+  onOpenClaimManagement,
+  onOpenReviewsManagement,
+}) {
   const [matches, setMatches] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -92,6 +99,10 @@ function AdminMatchManagementPage({ onBack, onSignOut }) {
           activeItemId='matches'
           onNavigate={(itemId) => {
             if (itemId === 'overview') onBack?.()
+            else if (itemId === 'user-management') onOpenUserManagement?.()
+            else if (itemId === 'reports') onOpenReportManagement?.()
+            else if (itemId === 'claims') onOpenClaimManagement?.()
+            else if (itemId === 'reviews') onOpenReviewsManagement?.()
           }}
           onSignOut={onSignOut}
         />

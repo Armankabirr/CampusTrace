@@ -13,7 +13,14 @@ function formatDate(value) {
   }
 }
 
-function UserManagementPage({ onBack, onSignOut }) {
+function UserManagementPage({
+  onBack,
+  onSignOut,
+  onOpenReportManagement,
+  onOpenMatchManagement,
+  onOpenClaimManagement,
+  onOpenReviewsManagement,
+}) {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
@@ -213,9 +220,11 @@ function UserManagementPage({ onBack, onSignOut }) {
         <AdminSidebar
           activeItemId='user-management'
           onNavigate={(itemId) => {
-            if (itemId === 'overview') {
-              onBack?.()
-            }
+            if (itemId === 'overview') onBack?.()
+            else if (itemId === 'reports') onOpenReportManagement?.()
+            else if (itemId === 'matches') onOpenMatchManagement?.()
+            else if (itemId === 'claims') onOpenClaimManagement?.()
+            else if (itemId === 'reviews') onOpenReviewsManagement?.()
           }}
           onSignOut={onSignOut}
         />

@@ -4,7 +4,7 @@ const navigationItems = [
   { id: 'reports', label: 'Report Management' },
   { id: 'matches', label: 'Matches' },
   { id: 'claims', label: 'Claims' },
-  { id: 'fraud', label: 'Fraud' },
+  { id: 'reviews', label: 'Reviews & Feedback' },
   { id: 'audit', label: 'Audit Logs' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'settings', label: 'Settings' },

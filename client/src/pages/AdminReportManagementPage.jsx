@@ -18,7 +18,14 @@ function formatStatusLabel(status) {
   return status.replace(/_/g, ' ')
 }
 
-function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) {
+function AdminReportManagementPage({
+  onBack,
+  onSignOut,
+  onOpenUserManagement,
+  onOpenMatchManagement,
+  onOpenClaimManagement,
+  onOpenReviewsManagement,
+}) {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -305,12 +312,11 @@ function AdminReportManagementPage({ onBack, onSignOut, onOpenUserManagement }) 
         <AdminSidebar
           activeItemId='reports'
           onNavigate={(itemId) => {
-            if (itemId === 'overview') {
-              onBack?.()
-            }
-            if (itemId === 'user-management') {
-              onOpenUserManagement?.()
-            }
+            if (itemId === 'overview') onBack?.()
+            else if (itemId === 'user-management') onOpenUserManagement?.()
+            else if (itemId === 'matches') onOpenMatchManagement?.()
+            else if (itemId === 'claims') onOpenClaimManagement?.()
+            else if (itemId === 'reviews') onOpenReviewsManagement?.()
           }}
           onSignOut={onSignOut}
         />

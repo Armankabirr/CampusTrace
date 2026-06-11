@@ -10,7 +10,14 @@ function formatDate(value) {
   }
 }
 
-function AdminClaimManagementPage({ onBack, onSignOut }) {
+function AdminClaimManagementPage({
+  onBack,
+  onSignOut,
+  onOpenUserManagement,
+  onOpenReportManagement,
+  onOpenMatchManagement,
+  onOpenReviewsManagement,
+}) {
   const [claims, setClaims] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -91,6 +98,10 @@ function AdminClaimManagementPage({ onBack, onSignOut }) {
           activeItemId='claims'
           onNavigate={(itemId) => {
             if (itemId === 'overview') onBack?.()
+            else if (itemId === 'user-management') onOpenUserManagement?.()
+            else if (itemId === 'reports') onOpenReportManagement?.()
+            else if (itemId === 'matches') onOpenMatchManagement?.()
+            else if (itemId === 'reviews') onOpenReviewsManagement?.()
           }}
           onSignOut={onSignOut}
         />

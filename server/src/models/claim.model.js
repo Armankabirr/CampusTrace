@@ -86,11 +86,15 @@ const claimSchema = new mongoose.Schema(
       rating: { type: Number, min: 1, max: 5, default: null },
       comment: { type: String, default: null },
       createdAt: { type: Date, default: null },
+      flagged: { type: Boolean, default: false },
+      moderated: { type: Boolean, default: false },
     },
     reporterReview: {
       rating: { type: Number, min: 1, max: 5, default: null },
       comment: { type: String, default: null },
       createdAt: { type: Date, default: null },
+      flagged: { type: Boolean, default: false },
+      moderated: { type: Boolean, default: false },
     },
   },
   { timestamps: true }

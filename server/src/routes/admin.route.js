@@ -24,6 +24,10 @@ import {
 	updateAdminUserRole,
 	updateAdminUserStatus,
 	updateFraudReport,
+	getAdminReviews,
+	getAdminReviewsAnalytics,
+	moderateAdminReview,
+	removeAdminReview,
 } from '../controllers/admin.ops.controller.js';
 import { requireAdmin, requireAuth } from '../middlewares/auth.middleware.js';
 
@@ -53,6 +57,11 @@ router.post('/matches/manual', requireAuth, requireAdmin, createManualMatch);
 router.patch('/matches/:matchId/status', requireAuth, requireAdmin, updateAdminMatchStatus);
 
 router.get('/audit-logs', requireAuth, requireAdmin, getAuditLogs);
+
+router.get('/reviews/analytics', requireAuth, requireAdmin, getAdminReviewsAnalytics);
+router.get('/reviews', requireAuth, requireAdmin, getAdminReviews);
+router.patch('/reviews/:claimId/:reviewType/moderate', requireAuth, requireAdmin, moderateAdminReview);
+router.delete('/reviews/:claimId/:reviewType', requireAuth, requireAdmin, removeAdminReview);
 
 router.get('/fraud-reports', requireAuth, requireAdmin, getFraudReports);
 router.post('/fraud-reports', requireAuth, requireAdmin, createFraudReport);

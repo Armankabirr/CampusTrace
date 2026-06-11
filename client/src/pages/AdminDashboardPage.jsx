@@ -5,7 +5,15 @@ function getCount(rows, value) {
   return (rows || []).find((item) => item.value === value)?.count || 0
 }
 
-function AdminDashboardPage({ authUser, onSignOut, onOpenUserManagement, onOpenReportManagement, onOpenMatchManagement, onOpenClaimManagement }) {
+function AdminDashboardPage({
+  authUser,
+  onSignOut,
+  onOpenUserManagement,
+  onOpenReportManagement,
+  onOpenMatchManagement,
+  onOpenClaimManagement,
+  onOpenReviewsManagement,
+}) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -108,6 +116,11 @@ function AdminDashboardPage({ authUser, onSignOut, onOpenUserManagement, onOpenR
 
     if (sectionId === 'claims' && onOpenClaimManagement) {
       onOpenClaimManagement()
+      return
+    }
+
+    if (sectionId === 'reviews' && onOpenReviewsManagement) {
+      onOpenReviewsManagement()
       return
     }
 

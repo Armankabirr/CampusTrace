@@ -1250,3 +1250,281 @@ export const getAdminNotificationHistory = async (req, res) => {
     return res.status(500).json({ message: 'Failed to load notifications.' });
   }
 };
+
+export const getAdminReviews = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search, flagged, reviewType, rating } = req.query;
+    const pageNum = Math.max(1, parseInt(page, 10));
+    const limitNum = Math.max(1, parseInt(limit, 10));
+    const skip = (pageNum - 1) * limitNum;
+
+    const dbQuery = {
+      $or: [
+        { 'claimerReview.createdAt': { $ne: null } },
+        { 'reporterReview.createdAt': { $ne: null } }
+      ]
+    };
+
+    const claims = await Claim.find(dbQuery)
+      .populate({
+        path: 'reportId',
+        select: 'title itemType category userId',
+        populate: { path: 'userId', select: 'name email role' }
+      })
+      .populate('claimerId', 'name email role')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    let reviewsList = [];
+    for (const claim of claims) {
+      if (claim.claimerReview && claim.claimerReview.createdAt) {
+        reviewsList.push({
+          claimId: claim._id,
+          reviewType: 'claimer',
+          rating: claim.claimerReview.rating,
+          comment: claim.claimerReview.comment,
+          createdAt: claim.claimerReview.createdAt,
+          flagged: !!claim.claimerReview.flagged,
+          moderated: !!claim.claimerReview.moderated,
+          reviewer: {
+            id: claim.claimerId?._id || claim.claimerId,
+            name: claim.claimerId?.name || 'Unknown User',
+            email: claim.claimerId?.email || '',
+            role: claim.claimerId?.role || 'student'
+          },
+          report: {
+            id: claim.reportId?._id || claim.reportId,
+            title: claim.reportId?.title || 'Unknown Item',
+            itemType: claim.reportId?.itemType || '',
+            category: claim.reportId?.category || ''
+          }
+        });
+      }
+
+      if (claim.reporterReview && claim.reporterReview.createdAt) {
+        const reporterUser = claim.reportId?.userId;
+        reviewsList.push({
+          claimId: claim._id,
+          reviewType: 'reporter',
+          rating: claim.reporterReview.rating,
+          comment: claim.reporterReview.comment,
+          createdAt: claim.reporterReview.createdAt,
+          flagged: !!claim.reporterReview.flagged,
+          moderated: !!claim.reporterReview.moderated,
+          reviewer: {
+            id: reporterUser?._id || reporterUser,
+            name: reporterUser?.name || 'Unknown User',
+            email: reporterUser?.email || '',
+            role: reporterUser?.role || 'student'
+          },
+          report: {
+            id: claim.reportId?._id || claim.reportId,
+            title: claim.reportId?.title || 'Unknown Item',
+            itemType: claim.reportId?.itemType || '',
+            category: claim.reportId?.category || ''
+          }
+        });
+      }
+    }
+
+    if (reviewType) {
+      reviewsList = reviewsList.filter(r => r.reviewType === reviewType);
+    }
+
+    if (flagged !== undefined && flagged !== '') {
+      const isFlagged = flagged === 'true';
+      reviewsList = reviewsList.filter(r => r.flagged === isFlagged);
+    }
+
+    if (rating) {
+      const ratingVal = parseInt(rating, 10);
+      reviewsList = reviewsList.filter(r => r.rating === ratingVal);
+    }
+
+    if (search) {
+      const s = search.toLowerCase();
+      reviewsList = reviewsList.filter(r =>
+        (r.comment && r.comment.toLowerCase().includes(s)) ||
+        (r.reviewer.name && r.reviewer.name.toLowerCase().includes(s)) ||
+        (r.reviewer.email && r.reviewer.email.toLowerCase().includes(s)) ||
+        (r.report.title && r.report.title.toLowerCase().includes(s))
+      );
+    }
+
+    reviewsList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const total = reviewsList.length;
+    const items = reviewsList.slice(skip, skip + limitNum);
+
+    return res.status(200).json({
+      items,
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limitNum))
+    });
+  } catch (error) {
+    console.error('Get admin reviews error:', error);
+    return res.status(500).json({ message: 'Failed to load reviews.' });
+  }
+};
+
+export const moderateAdminReview = async (req, res) => {
+  try {
+    const { claimId, reviewType } = req.params;
+    const { flagged, moderated } = req.body;
+
+    if (reviewType !== 'claimer' && reviewType !== 'reporter') {
+      return res.status(400).json({ message: 'Invalid review type.' });
+    }
+
+    const claim = await Claim.findById(claimId).populate('reportId');
+    if (!claim) {
+      return res.status(404).json({ message: 'Claim not found.' });
+    }
+
+    const before = {
+      claimerReview: { ...claim.claimerReview },
+      reporterReview: { ...claim.reporterReview }
+    };
+
+    if (reviewType === 'claimer') {
+      if (flagged !== undefined) claim.claimerReview.flagged = flagged;
+      if (moderated !== undefined) claim.claimerReview.moderated = moderated;
+    } else {
+      if (flagged !== undefined) claim.reporterReview.flagged = flagged;
+      if (moderated !== undefined) claim.reporterReview.moderated = moderated;
+    }
+
+    await claim.save();
+
+    await logAuditEvent({
+      actorUserId: req.user?._id || null,
+      actorRole: req.user?.role || null,
+      action: 'review.moderate',
+      targetType: 'Claim',
+      targetId: claim._id,
+      summary: `${req.user?.name || 'Admin'} moderated ${reviewType} review on claim for report ${claim.reportId?.title || claim.reportId}.`,
+      changes: { before, after: { claimerReview: claim.claimerReview, reporterReview: claim.reporterReview } },
+      severity: 'medium',
+      ip: req.ip,
+      userAgent: req.get('user-agent') || null,
+    });
+
+    return res.status(200).json({ message: 'Review updated successfully.' });
+  } catch (error) {
+    console.error('Moderate review error:', error);
+    return res.status(500).json({ message: 'Failed to update review moderation status.' });
+  }
+};
+
+export const removeAdminReview = async (req, res) => {
+  try {
+    const { claimId, reviewType } = req.params;
+
+    if (reviewType !== 'claimer' && reviewType !== 'reporter') {
+      return res.status(400).json({ message: 'Invalid review type.' });
+    }
+
+    const claim = await Claim.findById(claimId).populate('reportId');
+    if (!claim) {
+      return res.status(404).json({ message: 'Claim not found.' });
+    }
+
+    const before = {
+      claimerReview: { ...claim.claimerReview },
+      reporterReview: { ...claim.reporterReview }
+    };
+
+    if (reviewType === 'claimer') {
+      claim.claimerReview.comment = null;
+      claim.claimerReview.moderated = true;
+      claim.claimerReview.flagged = false;
+    } else {
+      claim.reporterReview.comment = null;
+      claim.reporterReview.moderated = true;
+      claim.reporterReview.flagged = false;
+    }
+
+    await claim.save();
+
+    await logAuditEvent({
+      actorUserId: req.user?._id || null,
+      actorRole: req.user?.role || null,
+      action: 'review.delete',
+      targetType: 'Claim',
+      targetId: claim._id,
+      summary: `${req.user?.name || 'Admin'} removed inappropriate comment from ${reviewType} review on claim for report ${claim.reportId?.title || claim.reportId}.`,
+      changes: { before, after: { claimerReview: claim.claimerReview, reporterReview: claim.reporterReview } },
+      severity: 'medium',
+      ip: req.ip,
+      userAgent: req.get('user-agent') || null,
+    });
+
+    return res.status(200).json({ message: 'Review comment removed successfully.' });
+  } catch (error) {
+    console.error('Remove review error:', error);
+    return res.status(500).json({ message: 'Failed to remove review comment.' });
+  }
+};
+
+export const getAdminReviewsAnalytics = async (req, res) => {
+  try {
+    const claims = await Claim.find({
+      $or: [
+        { 'claimerReview.createdAt': { $ne: null } },
+        { 'reporterReview.createdAt': { $ne: null } }
+      ]
+    }).lean();
+
+    let totalRating = 0;
+    let totalReviews = 0;
+    let claimerRating = 0;
+    let claimerCount = 0;
+    let reporterRating = 0;
+    let reporterCount = 0;
+    const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    let flaggedCount = 0;
+    let moderatedCount = 0;
+
+    for (const claim of claims) {
+      if (claim.claimerReview && claim.claimerReview.createdAt) {
+        const rating = claim.claimerReview.rating || 0;
+        if (rating) {
+          totalRating += rating;
+          claimerRating += rating;
+          ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
+        }
+        totalReviews++;
+        claimerCount++;
+        if (claim.claimerReview.flagged) flaggedCount++;
+        if (claim.claimerReview.moderated) moderatedCount++;
+      }
+      if (claim.reporterReview && claim.reporterReview.createdAt) {
+        const rating = claim.reporterReview.rating || 0;
+        if (rating) {
+          totalRating += rating;
+          reporterRating += rating;
+          ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
+        }
+        totalReviews++;
+        reporterCount++;
+        if (claim.reporterReview.flagged) flaggedCount++;
+        if (claim.reporterReview.moderated) moderatedCount++;
+      }
+    }
+
+    return res.status(200).json({
+      totalReviews,
+      averageRating: totalReviews ? Number((totalRating / totalReviews).toFixed(1)) : 0,
+      claimerAverage: claimerCount ? Number((claimerRating / claimerCount).toFixed(1)) : 0,
+      reporterAverage: reporterCount ? Number((reporterRating / reporterCount).toFixed(1)) : 0,
+      ratingDistribution,
+      flaggedCount,
+      moderatedCount
+    });
+  } catch (error) {
+    console.error('Reviews analytics error:', error);
+    return res.status(500).json({ message: 'Failed to compute reviews analytics.' });
+  }
+};

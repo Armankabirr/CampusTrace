@@ -14,6 +14,7 @@ import UserManagementPage from './pages/UserManagementPage'
 import AdminReportManagementPage from './pages/AdminReportManagementPage'
 import AdminMatchManagementPage from './pages/AdminMatchManagementPage'
 import AdminClaimManagementPage from './pages/AdminClaimManagementPage'
+import AdminReviewsPage from './pages/AdminReviewsPage'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home') // 'home', 'login', 'signup', 'forgot-password', 'profile', 'report', 'browse', 'report-detail', 'admin-dashboard', 'admin-user-management', 'admin-report-management'
@@ -150,6 +151,11 @@ function App() {
 
       if (path === '/admin/claims') {
         setCurrentPage('admin-claim-management')
+        return
+      }
+
+      if (path === '/admin/reviews') {
+        setCurrentPage('admin-reviews-management')
         return
       }
 
@@ -369,6 +375,11 @@ function App() {
     setCurrentPage('admin-claim-management')
   }
 
+  const handleOpenReviewsManagement = () => {
+    window.history.pushState({}, '', '/admin/reviews')
+    setCurrentPage('admin-reviews-management')
+  }
+
   const handleBackToAdminDashboard = () => {
     window.history.pushState({}, '', '/')
     setCurrentPage('admin-dashboard')
@@ -402,9 +413,17 @@ function App() {
         onOpenReportManagement={handleOpenReportManagement}
         onOpenMatchManagement={handleOpenMatchManagement}
         onOpenClaimManagement={handleOpenClaimManagement}
+        onOpenReviewsManagement={handleOpenReviewsManagement}
       />
     ) : currentPage === 'admin-user-management' ? (
-      <UserManagementPage onBack={handleBackToAdminDashboard} onSignOut={handleSignOut} />
+      <UserManagementPage
+        onBack={handleBackToAdminDashboard}
+        onSignOut={handleSignOut}
+        onOpenReportManagement={handleOpenReportManagement}
+        onOpenMatchManagement={handleOpenMatchManagement}
+        onOpenClaimManagement={handleOpenClaimManagement}
+        onOpenReviewsManagement={handleOpenReviewsManagement}
+      />
     ) : currentPage === 'admin-report-management' ? (
       <AdminReportManagementPage
         onBack={handleBackToAdminDashboard}
@@ -412,16 +431,34 @@ function App() {
         onOpenUserManagement={handleOpenUserManagement}
         onOpenMatchManagement={handleOpenMatchManagement}
         onOpenClaimManagement={handleOpenClaimManagement}
+        onOpenReviewsManagement={handleOpenReviewsManagement}
       />
     ) : currentPage === 'admin-match-management' ? (
       <AdminMatchManagementPage
         onBack={handleBackToAdminDashboard}
         onSignOut={handleSignOut}
+        onOpenUserManagement={handleOpenUserManagement}
+        onOpenReportManagement={handleOpenReportManagement}
+        onOpenClaimManagement={handleOpenClaimManagement}
+        onOpenReviewsManagement={handleOpenReviewsManagement}
       />
     ) : currentPage === 'admin-claim-management' ? (
       <AdminClaimManagementPage
         onBack={handleBackToAdminDashboard}
         onSignOut={handleSignOut}
+        onOpenUserManagement={handleOpenUserManagement}
+        onOpenReportManagement={handleOpenReportManagement}
+        onOpenMatchManagement={handleOpenMatchManagement}
+        onOpenReviewsManagement={handleOpenReviewsManagement}
+      />
+    ) : currentPage === 'admin-reviews-management' ? (
+      <AdminReviewsPage
+        onBack={handleBackToAdminDashboard}
+        onSignOut={handleSignOut}
+        onOpenUserManagement={handleOpenUserManagement}
+        onOpenReportManagement={handleOpenReportManagement}
+        onOpenMatchManagement={handleOpenMatchManagement}
+        onOpenClaimManagement={handleOpenClaimManagement}
       />
     ) : currentPage === 'profile' ? (
       <ProfilePage
