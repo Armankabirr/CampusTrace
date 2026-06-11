@@ -20,6 +20,7 @@ function UserManagementPage({
   onOpenMatchManagement,
   onOpenClaimManagement,
   onOpenReviewsManagement,
+  onOpenNotificationsManagement,
 }) {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -225,6 +226,7 @@ function UserManagementPage({
             else if (itemId === 'matches') onOpenMatchManagement?.()
             else if (itemId === 'claims') onOpenClaimManagement?.()
             else if (itemId === 'reviews') onOpenReviewsManagement?.()
+            else if (itemId === 'notifications') onOpenNotificationsManagement?.()
           }}
           onSignOut={onSignOut}
         />

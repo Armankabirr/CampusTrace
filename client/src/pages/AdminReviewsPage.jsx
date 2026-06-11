@@ -29,6 +29,7 @@ function AdminReviewsPage({
   onOpenReportManagement,
   onOpenMatchManagement,
   onOpenClaimManagement,
+  onOpenNotificationsManagement,
 }) {
   const [activeTab, setActiveTab] = useState('all') // 'all', 'moderate', 'remove', 'analytics'
   const [reviews, setReviews] = useState([])
@@ -178,6 +179,7 @@ function AdminReviewsPage({
     else if (itemId === 'reports') onOpenReportManagement?.()
     else if (itemId === 'matches') onOpenMatchManagement?.()
     else if (itemId === 'claims') onOpenClaimManagement?.()
+    else if (itemId === 'notifications') onOpenNotificationsManagement?.()
     else if (itemId === 'reviews') { /* already here */ }
   }
 

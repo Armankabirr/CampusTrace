@@ -17,6 +17,7 @@ function AdminMatchManagementPage({
   onOpenReportManagement,
   onOpenClaimManagement,
   onOpenReviewsManagement,
+  onOpenNotificationsManagement,
 }) {
   const [matches, setMatches] = useState([])
   const [loading, setLoading] = useState(true)
@@ -103,6 +104,7 @@ function AdminMatchManagementPage({
             else if (itemId === 'reports') onOpenReportManagement?.()
             else if (itemId === 'claims') onOpenClaimManagement?.()
             else if (itemId === 'reviews') onOpenReviewsManagement?.()
+            else if (itemId === 'notifications') onOpenNotificationsManagement?.()
           }}
           onSignOut={onSignOut}
         />

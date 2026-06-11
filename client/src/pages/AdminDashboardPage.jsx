@@ -13,6 +13,7 @@ function AdminDashboardPage({
   onOpenMatchManagement,
   onOpenClaimManagement,
   onOpenReviewsManagement,
+  onOpenNotificationsManagement,
 }) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -121,6 +122,11 @@ function AdminDashboardPage({
 
     if (sectionId === 'reviews' && onOpenReviewsManagement) {
       onOpenReviewsManagement()
+      return
+    }
+
+    if (sectionId === 'notifications' && onOpenNotificationsManagement) {
+      onOpenNotificationsManagement()
       return
     }
 
