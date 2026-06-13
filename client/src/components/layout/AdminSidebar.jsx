@@ -5,21 +5,14 @@ const navigationItems = [
   { id: 'matches', label: 'Matches' },
   { id: 'claims', label: 'Claims' },
   { id: 'reviews', label: 'Reviews & Feedback' },
-  { id: 'audit', label: 'Audit Logs' },
   { id: 'notifications', label: 'Notifications' },
-  { id: 'settings', label: 'Settings' },
 ]
 
-function AdminSidebar({ activeItemId = 'overview', onNavigate, showThemeToggle = false, theme, onToggleTheme, onSignOut }) {
+function AdminSidebar({ activeItemId = 'overview', onNavigate, theme, onSignOut }) {
   return (
     <aside className='w-64 bg-slate-950 p-6 hidden md:block h-screen'>
       <div className='flex items-center justify-between'>
         <div className='text-lg font-bold'>CampusTrace</div>
-        {showThemeToggle ? (
-          <button onClick={onToggleTheme} className='text-sm px-2 py-1 bg-slate-800 rounded'>
-            {theme === 'dark' ? 'Light' : 'Dark'}
-          </button>
-        ) : null}
       </div>
       <nav className='mt-8 space-y-1'>
         {navigationItems.map((item) => (
