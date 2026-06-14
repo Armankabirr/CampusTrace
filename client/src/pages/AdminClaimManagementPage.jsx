@@ -159,7 +159,6 @@ function AdminClaimManagementPage({
                       <th className='py-3 px-4'>Claimer</th>
                       <th className='py-3 px-4'>Status</th>
                       <th className='py-3 px-4'>Created At</th>
-                      <th className='py-3 px-4'>Actions</th>
                     </tr>
                   </thead>
                   <tbody className='divide-y divide-slate-700'>
@@ -183,31 +182,6 @@ function AdminClaimManagementPage({
                           </span>
                         </td>
                         <td className='py-4 px-4 text-gray-500 text-xs'>{formatDate(claim.createdAt)}</td>
-                        <td className='py-4 px-4'>
-                          <div className='flex gap-2'>
-                            <button
-                              onClick={() => updateClaimStatus(claim.id, 'verified')}
-                              disabled={actionLoading || claim.status === 'verified' || claim.status === 'returned'}
-                              className='px-2 py-1 rounded bg-indigo-500/20 text-indigo-300 text-xs hover:bg-indigo-500/30 transition-colors disabled:opacity-30'
-                            >
-                              Verify
-                            </button>
-                            <button
-                              onClick={() => updateClaimStatus(claim.id, 'returned')}
-                              disabled={actionLoading || claim.status === 'returned'}
-                              className='px-2 py-1 rounded bg-emerald-500/20 text-emerald-300 text-xs hover:bg-emerald-500/30 transition-colors disabled:opacity-30'
-                            >
-                              Returned
-                            </button>
-                            <button
-                              onClick={() => updateClaimStatus(claim.id, 'rejected')}
-                              disabled={actionLoading || claim.status === 'rejected'}
-                              className='px-2 py-1 rounded bg-rose-500/20 text-rose-300 text-xs hover:bg-rose-500/30 transition-colors disabled:opacity-30'
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
