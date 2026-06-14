@@ -66,11 +66,11 @@ const serializeReport = (report) => ({
   imageUrl: report.imageUrl,
   owner: report.userId
     ? {
-        id: report.userId._id,
-        name: report.userId.name,
-        email: report.userId.email,
-        role: report.userId.role,
-      }
+      id: report.userId._id,
+      name: report.userId.name,
+      email: report.userId.email,
+      role: report.userId.role,
+    }
     : null,
   createdAt: report.createdAt,
   updatedAt: report.updatedAt,
@@ -84,19 +84,19 @@ const serializeClaim = (claim) => ({
   notes: claim.notes,
   report: claim.reportId
     ? {
-        id: claim.reportId._id,
-        title: claim.reportId.title,
-        itemType: claim.reportId.itemType,
-        category: claim.reportId.category,
-      }
+      id: claim.reportId._id,
+      title: claim.reportId.title,
+      itemType: claim.reportId.itemType,
+      category: claim.reportId.category,
+    }
     : null,
   claimer: claim.claimerId
     ? {
-        id: claim.claimerId._id,
-        name: claim.claimerId.name,
-        email: claim.claimerId.email,
-        role: claim.claimerId.role,
-      }
+      id: claim.claimerId._id,
+      name: claim.claimerId.name,
+      email: claim.claimerId.email,
+      role: claim.claimerId.role,
+    }
     : null,
   createdAt: claim.createdAt,
   updatedAt: claim.updatedAt,
@@ -109,19 +109,19 @@ const serializeMatch = (match) => ({
   matchReasons: match.matchReasons || [],
   lostItem: match.lostItemId
     ? {
-        id: match.lostItemId._id,
-        title: match.lostItemId.title,
-        itemType: match.lostItemId.itemType,
-        category: match.lostItemId.category,
-      }
+      id: match.lostItemId._id,
+      title: match.lostItemId.title,
+      itemType: match.lostItemId.itemType,
+      category: match.lostItemId.category,
+    }
     : null,
   foundItem: match.foundItemId
     ? {
-        id: match.foundItemId._id,
-        title: match.foundItemId.title,
-        itemType: match.foundItemId.itemType,
-        category: match.foundItemId.category,
-      }
+      id: match.foundItemId._id,
+      title: match.foundItemId.title,
+      itemType: match.foundItemId.itemType,
+      category: match.foundItemId.category,
+    }
     : null,
   createdAt: match.createdAt,
   updatedAt: match.updatedAt,
@@ -139,11 +139,11 @@ const serializeAuditLog = (log) => ({
   createdAt: log.createdAt,
   actor: log.actorUserId
     ? {
-        id: log.actorUserId._id,
-        name: log.actorUserId.name,
-        email: log.actorUserId.email,
-        role: log.actorUserId.role,
-      }
+      id: log.actorUserId._id,
+      name: log.actorUserId.name,
+      email: log.actorUserId.email,
+      role: log.actorUserId.role,
+    }
     : null,
 });
 
@@ -159,41 +159,41 @@ const serializeFraudReport = (fraudReport) => ({
   resolvedAt: fraudReport.resolvedAt,
   assignedTo: fraudReport.assignedTo
     ? {
-        id: fraudReport.assignedTo._id,
-        name: fraudReport.assignedTo.name,
-        email: fraudReport.assignedTo.email,
-        role: fraudReport.assignedTo.role,
-      }
+      id: fraudReport.assignedTo._id,
+      name: fraudReport.assignedTo.name,
+      email: fraudReport.assignedTo.email,
+      role: fraudReport.assignedTo.role,
+    }
     : null,
   reporter: fraudReport.reporterUserId
     ? {
-        id: fraudReport.reporterUserId._id,
-        name: fraudReport.reporterUserId.name,
-        email: fraudReport.reporterUserId.email,
-        role: fraudReport.reporterUserId.role,
-      }
+      id: fraudReport.reporterUserId._id,
+      name: fraudReport.reporterUserId.name,
+      email: fraudReport.reporterUserId.email,
+      role: fraudReport.reporterUserId.role,
+    }
     : null,
   targetUser: fraudReport.targetUserId
     ? {
-        id: fraudReport.targetUserId._id,
-        name: fraudReport.targetUserId.name,
-        email: fraudReport.targetUserId.email,
-        role: fraudReport.targetUserId.role,
-      }
+      id: fraudReport.targetUserId._id,
+      name: fraudReport.targetUserId.name,
+      email: fraudReport.targetUserId.email,
+      role: fraudReport.targetUserId.role,
+    }
     : null,
   targetReport: fraudReport.targetReportId
     ? {
-        id: fraudReport.targetReportId._id,
-        title: fraudReport.targetReportId.title,
-        itemType: fraudReport.targetReportId.itemType,
-        category: fraudReport.targetReportId.category,
-      }
+      id: fraudReport.targetReportId._id,
+      title: fraudReport.targetReportId.title,
+      itemType: fraudReport.targetReportId.itemType,
+      category: fraudReport.targetReportId.category,
+    }
     : null,
   targetClaim: fraudReport.targetClaimId
     ? {
-        id: fraudReport.targetClaimId._id,
-        status: fraudReport.targetClaimId.status,
-      }
+      id: fraudReport.targetClaimId._id,
+      status: fraudReport.targetClaimId.status,
+    }
     : null,
   createdAt: fraudReport.createdAt,
   updatedAt: fraudReport.updatedAt,
@@ -802,12 +802,12 @@ export const getAdminMatches = async (req, res) => {
 
     const items = search
       ? matches.filter((match) => {
-          const haystack = [match.lostItemId?.title, match.foundItemId?.title, match.lostItemId?.category, match.foundItemId?.category]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-          return String(search).toLowerCase().split(' ').every((term) => haystack.includes(term));
-        })
+        const haystack = [match.lostItemId?.title, match.foundItemId?.title, match.lostItemId?.category, match.foundItemId?.category]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return String(search).toLowerCase().split(' ').every((term) => haystack.includes(term));
+      })
       : matches;
 
     const total = await Match.countDocuments(filter);

@@ -205,18 +205,60 @@ function AdminDashboardPage({
               <div className='text-sm text-gray-400'>Loading dashboard summary...</div>
             </div>
           ) : (
-          <>
-          <section id='analytics' className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
-            <div className='lg:col-span-2 bg-slate-800 rounded-lg p-4'>
-              <div className='text-sm text-gray-300 mb-4'>Analytics charts</div>
+            <>
+              <section id='analytics' className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
+                <div className='lg:col-span-2 bg-slate-800 rounded-lg p-4'>
+                  <div className='text-sm text-gray-300 mb-4'>Analytics charts</div>
 
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                <div className='rounded-lg bg-slate-900/60 p-3'>
-                  <div className='text-xs uppercase tracking-wider text-gray-400 mb-3'>Reports by item type</div>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                    <div className='rounded-lg bg-slate-900/60 p-3'>
+                      <div className='text-xs uppercase tracking-wider text-gray-400 mb-3'>Reports by item type</div>
+                      <div className='space-y-2'>
+                        {reportTypeChart.map((entry) => {
+                          const maxValue = Math.max(1, ...reportTypeChart.map((item) => item.value))
+                          const width = Math.max(8, Math.round((entry.value / maxValue) * 100))
+                          return (
+                            <div key={entry.label}>
+                              <div className='flex items-center justify-between text-sm mb-1'>
+                                <span>{entry.label}</span>
+                                <span className='text-gray-300'>{entry.value}</span>
+                              </div>
+                              <div className='h-2 w-full rounded bg-slate-700'>
+                                <div className={`h-2 rounded ${entry.color}`} style={{ width: `${width}%` }} />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div className='rounded-lg bg-slate-900/60 p-3'>
+                      <div className='text-xs uppercase tracking-wider text-gray-400 mb-3'>Matches by status</div>
+                      <div className='space-y-2'>
+                        {matchStatusChart.map((entry) => {
+                          const total = matchStatusChart.reduce((sum, item) => sum + item.value, 0)
+                          const pct = Math.round((entry.value / Math.max(1, total)) * 100)
+                          return (
+                            <div key={entry.label} className='flex items-center justify-between text-sm'>
+                              <span className='flex items-center gap-2'>
+                                <span className={`w-2.5 h-2.5 rounded-full ${entry.color}`} />
+                                {entry.label}
+                              </span>
+                              <span className='text-gray-300'>{entry.value} ({pct}%)</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className='bg-slate-800 rounded-lg p-4'>
+                  <div className='text-sm text-gray-300 mb-4'>Report status split</div>
                   <div className='space-y-2'>
-                    {reportTypeChart.map((entry) => {
-                      const maxValue = Math.max(1, ...reportTypeChart.map((item) => item.value))
-                      const width = Math.max(8, Math.round((entry.value / maxValue) * 100))
+                    {reportStatusChart.map((entry) => {
+                      const total = reportStatusChart.reduce((sum, item) => sum + item.value, 0)
+                      const pct = Math.round((entry.value / Math.max(1, total)) * 100)
                       return (
                         <div key={entry.label}>
                           <div className='flex items-center justify-between text-sm mb-1'>
@@ -224,58 +266,16 @@ function AdminDashboardPage({
                             <span className='text-gray-300'>{entry.value}</span>
                           </div>
                           <div className='h-2 w-full rounded bg-slate-700'>
-                            <div className={`h-2 rounded ${entry.color}`} style={{ width: `${width}%` }} />
+                            <div className={`h-2 rounded ${entry.color}`} style={{ width: `${Math.max(8, pct)}%` }} />
                           </div>
                         </div>
                       )
                     })}
                   </div>
                 </div>
+              </section>
 
-                <div className='rounded-lg bg-slate-900/60 p-3'>
-                  <div className='text-xs uppercase tracking-wider text-gray-400 mb-3'>Matches by status</div>
-                  <div className='space-y-2'>
-                    {matchStatusChart.map((entry) => {
-                      const total = matchStatusChart.reduce((sum, item) => sum + item.value, 0)
-                      const pct = Math.round((entry.value / Math.max(1, total)) * 100)
-                      return (
-                        <div key={entry.label} className='flex items-center justify-between text-sm'>
-                          <span className='flex items-center gap-2'>
-                            <span className={`w-2.5 h-2.5 rounded-full ${entry.color}`} />
-                            {entry.label}
-                          </span>
-                          <span className='text-gray-300'>{entry.value} ({pct}%)</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className='bg-slate-800 rounded-lg p-4'>
-              <div className='text-sm text-gray-300 mb-4'>Report status split</div>
-              <div className='space-y-2'>
-                {reportStatusChart.map((entry) => {
-                  const total = reportStatusChart.reduce((sum, item) => sum + item.value, 0)
-                  const pct = Math.round((entry.value / Math.max(1, total)) * 100)
-                  return (
-                    <div key={entry.label}>
-                      <div className='flex items-center justify-between text-sm mb-1'>
-                        <span>{entry.label}</span>
-                        <span className='text-gray-300'>{entry.value}</span>
-                      </div>
-                      <div className='h-2 w-full rounded bg-slate-700'>
-                        <div className={`h-2 rounded ${entry.color}`} style={{ width: `${Math.max(8, pct)}%` }} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </section>
-
-          </>
+            </>
           )}
         </main>
       </div>

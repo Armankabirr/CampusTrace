@@ -100,12 +100,12 @@ export const createClaim = async (req, res) => {
         ? rawAnswersProvided
         : typeof rawAnswersProvided === 'string'
           ? (() => {
-              try {
-                return JSON.parse(rawAnswersProvided);
-              } catch {
-                return null;
-              }
-            })()
+            try {
+              return JSON.parse(rawAnswersProvided);
+            } catch {
+              return null;
+            }
+          })()
           : null;
 
       if (!Array.isArray(answersProvided) || answersProvided.length === 0) {

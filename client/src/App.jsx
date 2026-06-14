@@ -504,9 +504,9 @@ function App() {
         autoOpenContactClaimId={profileAutoOpenContactClaimId}
       />
     ) : currentPage === 'report' ? (
-      <ReportItemPage 
-        authUser={authUser} 
-        onHome={handleHomeClick} 
+      <ReportItemPage
+        authUser={authUser}
+        onHome={handleHomeClick}
         onBrowse={handleBrowseClick}
         onMatches={handleMatchesClick}
         onReportItem={handleReportItemClick}

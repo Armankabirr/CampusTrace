@@ -122,9 +122,8 @@ function AdminMatchManagementPage({
 
           {toast && (
             <div className={`fixed top-6 right-6 z-50 animate-in slide-in-from-right-10 duration-300`}>
-              <div className={`flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-xl ${
-                toast.type === 'success' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-100' : 'border-rose-500/20 bg-rose-500/10 text-rose-100'
-              }`}>
+              <div className={`flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-xl ${toast.type === 'success' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-100' : 'border-rose-500/20 bg-rose-500/10 text-rose-100'
+                }`}>
                 <div className='text-sm font-bold'>{toast.type === 'success' ? 'Success' : 'Error'}</div>
                 <div className='text-xs opacity-80'>{toast.message}</div>
               </div>
@@ -178,11 +177,10 @@ function AdminMatchManagementPage({
                           </div>
                         </td>
                         <td className='py-4 px-4'>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${
-                            match.status === 'pending' ? 'bg-amber-500/10 text-amber-500' :
-                            match.status === 'confirmed' ? 'bg-emerald-500/10 text-emerald-500' :
-                            'bg-rose-500/10 text-rose-500'
-                          }`}>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${match.status === 'pending' ? 'bg-amber-500/10 text-amber-500' :
+                              match.status === 'confirmed' ? 'bg-emerald-500/10 text-emerald-500' :
+                                'bg-rose-500/10 text-rose-500'
+                            }`}>
                             {match.status}
                           </span>
                         </td>

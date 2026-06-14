@@ -63,7 +63,7 @@ function AdminReviewsPage({
       if (search) params.set('search', search)
       if (ratingFilter) params.set('rating', ratingFilter)
       if (typeFilter) params.set('reviewType', typeFilter)
-      
+
       // In moderation tab, we show flagged reviews first
       if (activeTab === 'moderate') {
         params.set('flagged', 'true')
@@ -184,7 +184,7 @@ function AdminReviewsPage({
   }
 
   // Calculate rating bars
-  const totalDistribution = analytics?.ratingDistribution 
+  const totalDistribution = analytics?.ratingDistribution
     ? Object.values(analytics.ratingDistribution).reduce((a, b) => a + b, 0)
     : 0
 
@@ -210,9 +210,8 @@ function AdminReviewsPage({
 
           {toast && (
             <div className='fixed top-6 right-6 z-50 animate-in slide-in-from-right-10 duration-300'>
-              <div className={`flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-xl ${
-                toast.type === 'success' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-100' : 'border-rose-500/20 bg-rose-500/10 text-rose-100'
-              }`}>
+              <div className={`flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-xl ${toast.type === 'success' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-100' : 'border-rose-500/20 bg-rose-500/10 text-rose-100'
+                }`}>
                 <div className='text-sm font-bold'>{toast.type === 'success' ? 'Success' : 'Error'}</div>
                 <div className='text-xs opacity-80'>{toast.message}</div>
               </div>
@@ -223,33 +222,29 @@ function AdminReviewsPage({
           <div className='flex border-b border-slate-700 mb-6'>
             <button
               onClick={() => { setActiveTab('all'); setPage(1); }}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'all' ? 'border-indigo-500 text-white bg-indigo-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'all' ? 'border-indigo-500 text-white bg-indigo-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
             >
               View Reviews
             </button>
             <button
               onClick={() => { setActiveTab('moderate'); setPage(1); }}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'moderate' ? 'border-indigo-500 text-white bg-indigo-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'moderate' ? 'border-indigo-500 text-white bg-indigo-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
             >
               Moderate Flagged
             </button>
             <button
               onClick={() => { setActiveTab('remove'); setPage(1); }}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'remove' ? 'border-indigo-500 text-white bg-indigo-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'remove' ? 'border-indigo-500 text-white bg-indigo-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
             >
               Remove Inappropriate
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'analytics' ? 'border-indigo-500 text-white bg-indigo-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'analytics' ? 'border-indigo-500 text-white bg-indigo-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
             >
               Feedback Analytics
             </button>
@@ -322,19 +317,17 @@ function AdminReviewsPage({
                     return (
                       <div
                         key={reviewKey}
-                        className={`bg-slate-800 rounded-lg p-5 border transition-all ${
-                          review.flagged
+                        className={`bg-slate-800 rounded-lg p-5 border transition-all ${review.flagged
                             ? 'border-rose-500/40 bg-rose-950/10'
                             : 'border-slate-700 hover:border-slate-600'
-                        }`}
+                          }`}
                       >
                         <div className='flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3'>
                           <div>
                             <div className='flex items-center gap-2 flex-wrap'>
                               <StarRating rating={review.rating} />
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                review.reviewType === 'claimer' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-teal-500/20 text-teal-300'
-                              }`}>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${review.reviewType === 'claimer' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-teal-500/20 text-teal-300'
+                                }`}>
                                 {review.reviewType === 'claimer' ? 'Claimer' : 'Reporter'}
                               </span>
                               {review.flagged && (
@@ -489,9 +482,8 @@ function AdminReviewsPage({
                         <div className='text-sm text-gray-400'>Flagged Reviews</div>
                         <div className='text-xs text-gray-500 mt-1'>Awaiting moderator review</div>
                       </div>
-                      <div className={`text-3xl font-bold px-4 py-1 rounded-lg ${
-                        analytics.flaggedCount > 0 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/35' : 'bg-slate-700/30 text-gray-400'
-                      }`}>
+                      <div className={`text-3xl font-bold px-4 py-1 rounded-lg ${analytics.flaggedCount > 0 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/35' : 'bg-slate-700/30 text-gray-400'
+                        }`}>
                         {analytics.flaggedCount}
                       </div>
                     </div>
@@ -510,12 +502,12 @@ function AdminReviewsPage({
                   {/* Charts & Distributions */}
                   <div className='bg-slate-800 rounded-lg p-6 border border-slate-700/50 shadow-md'>
                     <h2 className='text-lg font-bold text-white mb-6 border-b border-slate-700 pb-2'>Rating Distribution</h2>
-                    
+
                     <div className='space-y-4'>
                       {[5, 4, 3, 2, 1].map((rating) => {
                         const count = analytics.ratingDistribution?.[rating] || 0
                         const percentage = totalDistribution > 0 ? Math.round((count / totalDistribution) * 100) : 0
-                        
+
                         return (
                           <div key={rating} className='flex items-center gap-4 text-sm'>
                             <div className='w-14 text-right font-medium text-gray-300 flex items-center justify-end gap-1.5'>

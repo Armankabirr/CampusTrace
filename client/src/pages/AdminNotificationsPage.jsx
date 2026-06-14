@@ -259,9 +259,8 @@ function AdminNotificationsPage({
           {/* Toast */}
           {toast && (
             <div className='fixed top-6 right-6 z-50 animate-in slide-in-from-right-10 duration-300'>
-              <div className={`flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-xl ${
-                toast.type === 'success' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-100' : 'border-rose-500/20 bg-rose-500/10 text-rose-100'
-              }`}>
+              <div className={`flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-xl ${toast.type === 'success' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-100' : 'border-rose-500/20 bg-rose-500/10 text-rose-100'
+                }`}>
                 <div className='text-sm font-bold'>{toast.type === 'success' ? '✓ Success' : '✕ Error'}</div>
                 <div className='text-xs opacity-80'>{toast.message}</div>
               </div>
@@ -272,33 +271,29 @@ function AdminNotificationsPage({
           <div className='flex border-b border-slate-700 mb-6'>
             <button
               onClick={() => setActiveTab('broadcast')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'broadcast' ? 'border-indigo-500 text-white bg-indigo-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'broadcast' ? 'border-indigo-500 text-white bg-indigo-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
             >
               📢 Broadcast Announcements
             </button>
             <button
               onClick={() => setActiveTab('warnings')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'warnings' ? 'border-amber-500 text-white bg-amber-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'warnings' ? 'border-amber-500 text-white bg-amber-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
             >
               ⚠️ Send Warnings
             </button>
             <button
               onClick={() => setActiveTab('system')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'system' ? 'border-teal-500 text-white bg-teal-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'system' ? 'border-teal-500 text-white bg-teal-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
             >
               🔔 System Notifications
             </button>
             <button
               onClick={() => { setActiveTab('history'); setHistoryPage(1); }}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'history' ? 'border-violet-500 text-white bg-violet-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'history' ? 'border-violet-500 text-white bg-violet-600/5' : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
             >
               📋 Notification History
             </button>
@@ -404,9 +399,8 @@ function AdminNotificationsPage({
                     return (
                       <div
                         key={notif._id}
-                        className={`bg-slate-800 rounded-lg p-4 border border-slate-700 hover:border-slate-600 transition-all ${
-                          !notif.isRead ? 'border-l-2 border-l-indigo-500' : ''
-                        }`}
+                        className={`bg-slate-800 rounded-lg p-4 border border-slate-700 hover:border-slate-600 transition-all ${!notif.isRead ? 'border-l-2 border-l-indigo-500' : ''
+                          }`}
                       >
                         <div className='flex items-start justify-between gap-3'>
                           <div className='flex-1 min-w-0'>
