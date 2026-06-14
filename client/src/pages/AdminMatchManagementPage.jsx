@@ -158,7 +158,6 @@ function AdminMatchManagementPage({
                       <th className='py-3 px-4'>Match Score</th>
                       <th className='py-3 px-4'>Status</th>
                       <th className='py-3 px-4'>Created At</th>
-                      <th className='py-3 px-4'>Actions</th>
                     </tr>
                   </thead>
                   <tbody className='divide-y divide-slate-700'>
@@ -188,24 +187,6 @@ function AdminMatchManagementPage({
                           </span>
                         </td>
                         <td className='py-4 px-4 text-gray-500 text-xs'>{formatDate(match.createdAt)}</td>
-                        <td className='py-4 px-4'>
-                          <div className='flex gap-2'>
-                            <button
-                              onClick={() => updateMatchStatus(match.id, 'confirmed')}
-                              disabled={actionLoading || match.status === 'confirmed'}
-                              className='px-2 py-1 rounded bg-emerald-500/20 text-emerald-300 text-xs hover:bg-emerald-500/30 transition-colors disabled:opacity-30'
-                            >
-                              Confirm
-                            </button>
-                            <button
-                              onClick={() => updateMatchStatus(match.id, 'rejected')}
-                              disabled={actionLoading || match.status === 'rejected'}
-                              className='px-2 py-1 rounded bg-rose-500/20 text-rose-300 text-xs hover:bg-rose-500/30 transition-colors disabled:opacity-30'
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
