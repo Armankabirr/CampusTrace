@@ -478,28 +478,29 @@ function AdminReportManagementPage({
                             </button>
                             <button
                               onClick={() => openEditPanel(report)}
-                              className='px-2 py-1 rounded bg-slate-700/70 text-white'
+                              className='px-2 py-1 rounded bg-slate-700/70 text-white disabled:opacity-30 disabled:cursor-not-allowed transition-opacity'
+                              disabled={actionLoading || report.status === 'resolved'}
                             >
                               Edit
                             </button>
                             <button
                                onClick={() => applyQuickStatus(report.id, 'active', 'Approve')}
                                className='px-2 py-1 rounded bg-emerald-500/20 text-emerald-200 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity'
-                               disabled={actionLoading || report.status === 'active'}
+                               disabled={actionLoading || report.status === 'active' || report.status === 'resolved'}
                              >
                                {report.status === 'active' ? 'Approved' : 'Approve'}
                              </button>
                              <button
                                onClick={() => openRejectionModal(report)}
                                className='px-2 py-1 rounded bg-amber-500/20 text-amber-200 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity'
-                               disabled={actionLoading || report.status === 'archived'}
+                               disabled={actionLoading || report.status === 'archived' || report.status === 'resolved'}
                              >
                                {report.status === 'archived' ? 'Rejected' : 'Reject'}
                              </button>
                              <button
                                onClick={() => handleDelete(report.id)}
                                className='px-2 py-1 rounded bg-rose-500/20 text-rose-200 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity'
-                               disabled={actionLoading}
+                               disabled={actionLoading || report.status === 'resolved'}
                              >
                                Delete
                              </button>
