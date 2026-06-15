@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 
@@ -38,6 +38,7 @@ function formatDate(value) {
 
 function ReportItemPage({ authUser, onHome, onBrowse, onMatches, onReportItem, onBack, unreadNotifications, pendingMatchCount, onNotificationClick }) {
   const fileInputRef = useRef(null)
+  const formCardRef = useRef(null)
   const [formStep, setFormStep] = useState(1)
   const [formData, setFormData] = useState({
     ...initialFormState,
@@ -58,6 +59,12 @@ function ReportItemPage({ authUser, onHome, onBrowse, onMatches, onReportItem, o
     () => (formData.itemType === 'lost' ? 'bg-slate-900' : 'bg-slate-800'),
     [formData.itemType],
   )
+
+  useEffect(() => {
+    if (submissionSuccess || submissionError) {
+      formCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [submissionSuccess, submissionError])
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -314,11 +321,25 @@ function ReportItemPage({ authUser, onHome, onBrowse, onMatches, onReportItem, o
                 </div>
               </div>
 
-              <div className="rounded-[1.75rem] bg-white p-5 text-slate-900 shadow-soft sm:p-6">
+              <div ref={formCardRef} className="rounded-[1.75rem] bg-white p-5 text-slate-900 shadow-soft sm:p-6">
                 <div className={`rounded-2xl ${submitTone} px-5 py-4 text-white`}>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Status</p>
                   <p className="mt-1 text-lg font-bold capitalize">{formData.itemType} item report</p>
                 </div>
+
+                {submissionSuccess ? (
+                  <div
+                    role="status"
+                    className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
+                  >
+                    {submissionSuccess}
+                  </div>
+                ) : null}
+                {submissionError ? (
+                  <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {submissionError}
+                  </div>
+                ) : null}
 
                 <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                   {formStep === 1 ? (
@@ -580,15 +601,6 @@ function ReportItemPage({ authUser, onHome, onBrowse, onMatches, onReportItem, o
                       )}
                     </>
                   )}
-
-                  {submissionError ? (
-                    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{submissionError}</div>
-                  ) : null}
-                  {submissionSuccess ? (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                      {submissionSuccess}
-                    </div>
-                  ) : null}
 
                   <div className="flex gap-3 pt-2">
                     {formStep === 1 ? (
