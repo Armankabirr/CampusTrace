@@ -1,6 +1,6 @@
 # CampusTrace
 
-> CampusTrace is a campus safety and incident reporting web application with a React + Vite frontend and an Express/Node backend. It helps users report incidents, browse reports, match reports to users, and receive notifications.
+> CampusTrace is a lost-and-found platform built for United International University (UIU) CSE students. Students report lost or found items, browse active listings, get smart matching between opposite reports, verify ownership through claims, and receive in-app + email notifications. Admins moderate everything through a dedicated panel.
 
 ## Table of Contents
 
