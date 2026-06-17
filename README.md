@@ -29,9 +29,9 @@
 
 - Frontend: React, Vite, Tailwind CSS
 - Backend: Node.js, Express
-- Database: MongoDB (or compatible)
-- Email: Gmail OAuth / Nodemailer (helper script available)
-- Image hosting: ImageKit (service integration present)
+- Database: MongoDB 
+- Email: Gmail OAuth, Nodemailer
+- Image hosting: ImageKit 
 
 ## Repository Structure
 
@@ -86,7 +86,7 @@ npm run dev
 Backend:
 ```bash
 cd server
-npm run dev
+node server.js / nodemon server.js
 ```
 
 Open the frontend URL reported by Vite (usually http://localhost:5173) and ensure the backend is running on the configured port (default commonly `http://localhost:3000`).
@@ -142,19 +142,9 @@ Authentication is typically handled via JWT sent in an `Authorization: Bearer <t
 There are no centralized tests included by default. To test locally:
 
 - Start both servers (frontend and backend) and exercise flows in the UI
-- Use API tools like Postman or curl to exercise endpoints
+- Used API tools like Postman 
 
 If you want unit or integration tests, consider adding a test framework (Jest / Supertest) under `server/` and `client/`.
-
-## Deployment
-
-General guidelines:
-
-- Build the frontend (`cd client && npm run build`) and serve the static files from a CDN or host (Netlify, Vercel, Surge) or serve them via the backend static route.
-- Host the backend on a Node-friendly host (Heroku, Render, Railway, AWS Elastic Beanstalk, DigitalOcean App Platform).
-- Use environment variables in your host provider for secrets and connection strings.
-
-For a simple single-server deployment, build the client and copy the `dist` output into a `public/` folder served by the Express app, or configure a reverse proxy.
 
 ## Contributing
 
