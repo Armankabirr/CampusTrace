@@ -162,7 +162,6 @@ Please follow existing code style and linting rules.
 - A helper script for Gmail OAuth exists under `server/scripts/gmail-oauth-helper.mjs` to obtain tokens for sending email.
 - Image uploads are integrated with ImageKit in `server/src/services/imagekit.service.js` (check service implementation for details).
 
-## License
 
 
 ---
